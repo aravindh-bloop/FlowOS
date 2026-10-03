@@ -6,6 +6,10 @@ class Settings(BaseSettings):
     SECRET_KEY: str = "flowos-secret"
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 480
+
+    # Sarvam AI speech-to-text (voice notes). Keep the key server-side only.
+    SARVAM_API_KEY: str = ""
+    SARVAM_STT_MODEL: str = "saaras:v3"
     
     model_config = {"env_file": ".env", "extra": "ignore"}
 

@@ -29,9 +29,16 @@ def seed():
         conn.commit()
     Base.metadata.create_all(bind=engine)
 
-    # 1. Admin User
+    # 1. Admin User + Caretaker portal test account
     admin = User(email="admin@flowos.com", password_hash=hash_password("admin123"), full_name="System Admin", role=UserRole.ADMIN)
     db.add(admin)
+    from app.seed.test_users import TEST_CARETAKER
+    db.add(User(
+        email=TEST_CARETAKER["email"],
+        password_hash=hash_password(TEST_CARETAKER["password"]),
+        full_name=TEST_CARETAKER["full_name"],
+        role=TEST_CARETAKER["role"],
+    ))
     db.commit()
 
     # 2. Departments
