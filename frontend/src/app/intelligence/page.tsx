@@ -18,8 +18,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 
 import { runAnomalyDetection, predictWaitingTime } from '@/lib/api';
-import { ShieldAlert, Clock } from 'lucide-react';
+import { ShieldAlert, Clock, TrendingUp, Gauge, AlertTriangle as AlertTriangleIcon } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
+import BottleneckForecasterTab from '@/components/intelligence/BottleneckForecasterTab';
+import DemandForecasterTab from '@/components/intelligence/DemandForecasterTab';
+import WorkloadForecasterTab from '@/components/intelligence/WorkloadForecasterTab';
+import DecisionOptimizationTab from '@/components/intelligence/DecisionOptimizationTab';
 
 export default function IntelligencePage() {
   const [predictions, setPredictions] = useState<Prediction[]>([]);
@@ -216,15 +221,27 @@ export default function IntelligencePage() {
       </div>
 
       <Tabs defaultValue="predictions" className="w-full">
-        <TabsList className="bg-white border border-slate-200 shadow-2xs mb-6 p-1">
+        <TabsList className="bg-white border border-slate-200 shadow-2xs mb-6 p-1 flex flex-wrap gap-1">
           <TabsTrigger value="predictions" className="data-[state=active]:bg-teal-50 data-[state=active]:text-teal-700 font-semibold text-xs">Predictions</TabsTrigger>
           <TabsTrigger value="bottlenecks" className="data-[state=active]:bg-teal-50 data-[state=active]:text-teal-700 font-semibold text-xs">Bottlenecks</TabsTrigger>
           <TabsTrigger value="recommendations" className="data-[state=active]:bg-teal-50 data-[state=active]:text-teal-700 font-semibold text-xs">Recommendations</TabsTrigger>
-          <TabsTrigger value="anomalies" className="data-[state=active]:bg-teal-50 data-[state=active]:text-teal-700 font-bold text-xs flex items-center">
-            <ShieldAlert className="w-3.5 h-3.5 mr-1.5 text-indigo-600" /> ML Anomaly Detector (v1.0.0)
+          <TabsTrigger value="anomalies" className="data-[state=active]:bg-indigo-50 data-[state=active]:text-indigo-700 font-bold text-xs flex items-center">
+            <ShieldAlert className="w-3.5 h-3.5 mr-1.5 text-indigo-600" /> ML Anomaly Detector (v1.0)
           </TabsTrigger>
           <TabsTrigger value="waiting-time" className="data-[state=active]:bg-teal-50 data-[state=active]:text-teal-700 font-bold text-xs flex items-center">
-            <Clock className="w-3.5 h-3.5 mr-1.5 text-teal-600" /> ML Waiting Time (v1.0.0)
+            <Clock className="w-3.5 h-3.5 mr-1.5 text-teal-600" /> ML Waiting Time (v1.0)
+          </TabsTrigger>
+          <TabsTrigger value="ml-bottleneck" className="data-[state=active]:bg-amber-50 data-[state=active]:text-amber-800 font-bold text-xs flex items-center">
+            <AlertTriangle className="w-3.5 h-3.5 mr-1.5 text-amber-500" /> ML Bottleneck Forecaster (v2.0)
+          </TabsTrigger>
+          <TabsTrigger value="ml-demand" className="data-[state=active]:bg-indigo-50 data-[state=active]:text-indigo-800 font-bold text-xs flex items-center">
+            <TrendingUp className="w-3.5 h-3.5 mr-1.5 text-indigo-600" /> ML Demand Forecaster (v1.0)
+          </TabsTrigger>
+          <TabsTrigger value="ml-workload" className="data-[state=active]:bg-teal-50 data-[state=active]:text-teal-800 font-bold text-xs flex items-center">
+            <Gauge className="w-3.5 h-3.5 mr-1.5 text-teal-600" /> ML Staff Workload (v1.0)
+          </TabsTrigger>
+          <TabsTrigger value="decision-optimization" className="data-[state=active]:bg-slate-900 data-[state=active]:text-white font-bold text-xs flex items-center">
+            <Zap className="w-3.5 h-3.5 mr-1.5 text-amber-400" /> Decision Engines
           </TabsTrigger>
         </TabsList>
 
@@ -922,6 +939,22 @@ export default function IntelligencePage() {
               </CardContent>
             </Card>
           </div>
+        </TabsContent>
+
+        <TabsContent value="ml-bottleneck">
+          <BottleneckForecasterTab />
+        </TabsContent>
+
+        <TabsContent value="ml-demand">
+          <DemandForecasterTab />
+        </TabsContent>
+
+        <TabsContent value="ml-workload">
+          <WorkloadForecasterTab />
+        </TabsContent>
+
+        <TabsContent value="decision-optimization">
+          <DecisionOptimizationTab />
         </TabsContent>
       </Tabs>
 

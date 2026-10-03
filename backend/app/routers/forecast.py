@@ -19,6 +19,13 @@ from services.workload_forecaster import (
     PredictionError as WorkloadPredictionError,
     workload_forecaster,
 )
+from services.bottleneck_forecaster import (
+    predict_bottleneck,
+    BottleneckForecasterError,
+    ModelLoadError as BottleneckModelLoadError,
+    FeatureValidationError as BottleneckFeatureValidationError,
+    _forecaster as bottleneck_forecaster,
+)
 
 router = APIRouter(prefix="/api/forecast", tags=["Operational Forecasting ML"])
 
@@ -133,4 +140,44 @@ def forecast_workload(payload: Dict[str, Any]):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Unexpected workload forecasting failure: {str(exc)}",
         ) from exc
+
+
+class BottleneckForecastResponse(BaseModel):
+    prediction: str
+    confidence: float
+    threshold: float
+    forecast_horizon: str
+    probabilities: Dict[str, float]
+
+
+@router.post("/bottleneck", response_model=BottleneckForecastResponse)
+def forecast_bottleneck(payload: Dict[str, Any]):
+    """Forecasts hospital operational bottlenecks 1 hour into the future based on 27 telemetry features.
+
+    Applies RandomForest model, excludes NONE when calculating top candidate, and gates on threshold 0.24.
+    """
+    try:
+        result = predict_bottleneck(payload)
+        return result
+    except BottleneckFeatureValidationError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(exc),
+        ) from exc
+    except BottleneckModelLoadError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=str(exc),
+        ) from exc
+    except BottleneckForecasterError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        ) from exc
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Unexpected bottleneck forecasting failure: {str(exc)}",
+        ) from exc
+
 
