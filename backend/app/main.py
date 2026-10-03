@@ -18,6 +18,7 @@ from app.routers import (
     speech,
     staff,
     staff_portal,
+    forecast,
 )
 
 app = FastAPI(title="FlowOS Backend")
@@ -47,6 +48,7 @@ app.include_router(staff_portal.router)
 app.include_router(speech.router)
 app.include_router(intelligence.router)
 app.include_router(anomalies.router)
+app.include_router(forecast.router)
 
 @app.get("/api/health")
 def health_check():
