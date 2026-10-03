@@ -100,4 +100,7 @@ export const getLiveAnomalies = (): Promise<any> => api.get('/anomalies/live').t
 export const registerPatientIntake = (payload: any): Promise<any> => api.post('/patients/intake', payload).then((res) => res.data);
 export const getAvailableDoctors = (department_id?: number): Promise<any[]> => api.get('/patients/available-doctors', { params: { department_id } }).then((res) => res.data);
 
+// ML Waiting Time Prediction Endpoint
+export const predictWaitingTime = (hospitalState: any): Promise<any> => api.post('/intelligence/waiting-time', hospitalState).then((res) => res.data);
+
 export default api;
