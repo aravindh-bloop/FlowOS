@@ -104,4 +104,7 @@ export const getAvailableDoctors = (department_id?: number): Promise<any[]> => a
 export const getPatientTimeline = (patient_id: number | string): Promise<any> => api.get(`/patients/${patient_id}/timeline`).then((res) => res.data);
 export const postPatientTimelineUpdate = (patient_id: number | string, data: any): Promise<any> => api.post(`/patients/${patient_id}/timeline`, data).then((res) => res.data);
 
+// ML Waiting Time Prediction Endpoint
+export const predictWaitingTime = (hospitalState: any): Promise<any> => api.post('/intelligence/waiting-time', hospitalState).then((res) => res.data);
+
 export default api;

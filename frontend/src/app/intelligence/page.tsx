@@ -17,8 +17,9 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 
-import { runAnomalyDetection } from '@/lib/api';
-import { ShieldAlert } from 'lucide-react';
+import { runAnomalyDetection, predictWaitingTime } from '@/lib/api';
+import { ShieldAlert, Clock } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 export default function IntelligencePage() {
   const [predictions, setPredictions] = useState<Prediction[]>([]);
@@ -50,6 +51,46 @@ export default function IntelligencePage() {
 
   const [anomalyResult, setAnomalyResult] = useState<any>(null);
   const [anomalyLoading, setAnomalyLoading] = useState(false);
+
+  // ML Waiting Time Prediction state
+  const [waitingTimeState, setWaitingTimeState] = useState({
+    hour: 14,
+    day_of_week: 2,
+    is_weekend: 0,
+    procedure_type: "CT",
+    patient_priority: "URGENT",
+    er_arrivals: 10,
+    admissions: 6,
+    discharges: 5,
+    er_queue: 8,
+    bed_occupancy: 0.91,
+    available_beds: 18,
+    icu_occupancy: 0.88,
+    available_icu_beds: 2,
+    ct_queue: 14,
+    mri_queue: 5,
+    equipment_utilization: 0.91,
+    staff_workload: 0.82,
+    active_emergencies: 3,
+    pending_tasks: 35,
+    historical_avg_processing_time: 42
+  });
+
+  const [waitingTimeResult, setWaitingTimeResult] = useState<any>(null);
+  const [waitingTimeLoading, setWaitingTimeLoading] = useState(false);
+
+  const handleRunWaitingTime = async (customState?: any) => {
+    setWaitingTimeLoading(true);
+    try {
+      const stateToUse = customState || waitingTimeState;
+      const res = await predictWaitingTime(stateToUse);
+      setWaitingTimeResult(res);
+    } catch (err) {
+      console.error("Waiting Time Error:", err);
+    } finally {
+      setWaitingTimeLoading(false);
+    }
+  };
   
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
@@ -181,6 +222,9 @@ export default function IntelligencePage() {
           <TabsTrigger value="recommendations" className="data-[state=active]:bg-teal-50 data-[state=active]:text-teal-700 font-semibold text-xs">Recommendations</TabsTrigger>
           <TabsTrigger value="anomalies" className="data-[state=active]:bg-teal-50 data-[state=active]:text-teal-700 font-bold text-xs flex items-center">
             <ShieldAlert className="w-3.5 h-3.5 mr-1.5 text-indigo-600" /> ML Anomaly Detector (v1.0.0)
+          </TabsTrigger>
+          <TabsTrigger value="waiting-time" className="data-[state=active]:bg-teal-50 data-[state=active]:text-teal-700 font-bold text-xs flex items-center">
+            <Clock className="w-3.5 h-3.5 mr-1.5 text-teal-600" /> ML Waiting Time (v1.0.0)
           </TabsTrigger>
         </TabsList>
 
@@ -590,6 +634,289 @@ export default function IntelligencePage() {
                   <div className="py-12 text-center text-slate-400 bg-slate-50 rounded-xl border border-dashed border-slate-200 space-y-2">
                     <Zap className="w-8 h-8 mx-auto text-slate-300" />
                     <p className="font-semibold text-slate-600">Click "Run Hybrid ML Anomaly Evaluation" or select a preset above to execute predictions</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        {/* TAB 5: ML WAITING TIME PREDICTOR (v1.0.0) */}
+        <TabsContent value="waiting-time" className="space-y-6">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
+            <div>
+              <div className="flex items-center space-x-2">
+                <Badge className="bg-teal-100 text-teal-800 border-teal-300 font-bold text-xs">
+                  MODEL: flowos_waiting_time_model.pkl (v1.0.0)
+                </Badge>
+                <Badge variant="outline" className="bg-slate-50 text-slate-700 border-slate-300 font-bold text-xs">
+                  GradientBoostingRegressor • MAE: 5.55m • R²: 0.8428
+                </Badge>
+              </div>
+              <h2 className="text-xl font-bold text-slate-900 mt-2">Flow OS ML Waiting Time Estimator</h2>
+              <p className="text-xs text-slate-500 font-medium mt-0.5">
+                Estimates actual patient procedure and consultation waiting times using scikit-learn OneHotEncoder + GradientBoostingRegressor.
+              </p>
+            </div>
+
+            {/* Scenario Preset Buttons */}
+            <div className="flex flex-wrap items-center gap-2">
+              <Button 
+                size="sm" 
+                variant="outline"
+                className="border-teal-300 bg-teal-50 text-teal-800 hover:bg-teal-100 font-bold text-xs"
+                onClick={() => {
+                  const state = {
+                    hour: 14, day_of_week: 2, is_weekend: 0, procedure_type: "CT", patient_priority: "URGENT",
+                    er_arrivals: 10, admissions: 6, discharges: 5, er_queue: 8, bed_occupancy: 0.91,
+                    available_beds: 18, icu_occupancy: 0.88, available_icu_beds: 2, ct_queue: 14, mri_queue: 5,
+                    equipment_utilization: 0.91, staff_workload: 0.82, active_emergencies: 3, pending_tasks: 35,
+                    historical_avg_processing_time: 42
+                  };
+                  setWaitingTimeState(state);
+                  handleRunWaitingTime(state);
+                }}
+              >
+                Benchmark: CT Urgent (Target: ~77.7m)
+              </Button>
+              <Button 
+                size="sm" 
+                variant="outline"
+                className="border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100 font-bold text-xs"
+                onClick={() => {
+                  const state = {
+                    hour: 10, day_of_week: 1, is_weekend: 0, procedure_type: "XRAY", patient_priority: "NORMAL",
+                    er_arrivals: 4, admissions: 2, discharges: 3, er_queue: 2, bed_occupancy: 0.70,
+                    available_beds: 30, icu_occupancy: 0.60, available_icu_beds: 8, ct_queue: 2, mri_queue: 1,
+                    equipment_utilization: 0.55, staff_workload: 0.60, active_emergencies: 0, pending_tasks: 10,
+                    historical_avg_processing_time: 20
+                  };
+                  setWaitingTimeState(state);
+                  handleRunWaitingTime(state);
+                }}
+              >
+                Preset 2: Routine X-Ray Walk-in
+              </Button>
+              <Button 
+                size="sm" 
+                variant="outline"
+                className="border-rose-300 bg-rose-50 text-rose-800 hover:bg-rose-100 font-bold text-xs"
+                onClick={() => {
+                  const state = {
+                    hour: 19, day_of_week: 4, is_weekend: 0, procedure_type: "MRI", patient_priority: "CRITICAL",
+                    er_arrivals: 15, admissions: 9, discharges: 2, er_queue: 14, bed_occupancy: 0.96,
+                    available_beds: 6, icu_occupancy: 0.98, available_icu_beds: 1, ct_queue: 18, mri_queue: 12,
+                    equipment_utilization: 0.95, staff_workload: 0.94, active_emergencies: 5, pending_tasks: 48,
+                    historical_avg_processing_time: 55
+                  };
+                  setWaitingTimeState(state);
+                  handleRunWaitingTime(state);
+                }}
+              >
+                Preset 3: Emergency MRI Critical
+              </Button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Input Telemetry Form */}
+            <Card className="bg-white border-slate-200/80 shadow-xs">
+              <CardHeader>
+                <CardTitle className="text-base font-bold text-slate-900 flex items-center">
+                  <Brain className="w-5 h-5 mr-2 text-teal-600" /> Procedure & Operational Features
+                </CardTitle>
+                <CardDescription className="text-xs">Adjust procedure type, priority, and hospital load parameters</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4 text-xs">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <Label className="font-semibold text-slate-700">Procedure Type</Label>
+                    <Select 
+                      value={waitingTimeState.procedure_type} 
+                      onValueChange={val => val && setWaitingTimeState({...waitingTimeState, procedure_type: val})}
+                    >
+                      <SelectTrigger className="bg-slate-50 border-slate-200">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="CT">CT Scan</SelectItem>
+                        <SelectItem value="MRI">MRI Scan</SelectItem>
+                        <SelectItem value="XRAY">X-Ray Imaging</SelectItem>
+                        <SelectItem value="ULTRASOUND">Ultrasound</SelectItem>
+                        <SelectItem value="LAB">Lab Diagnostics</SelectItem>
+                        <SelectItem value="SURGERY">Surgical Suite</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="font-semibold text-slate-700">Patient Priority</Label>
+                    <Select 
+                      value={waitingTimeState.patient_priority} 
+                      onValueChange={val => val && setWaitingTimeState({...waitingTimeState, patient_priority: val})}
+                    >
+                      <SelectTrigger className="bg-slate-50 border-slate-200">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="URGENT">URGENT</SelectItem>
+                        <SelectItem value="CRITICAL">CRITICAL</SelectItem>
+                        <SelectItem value="HIGH">HIGH</SelectItem>
+                        <SelectItem value="NORMAL">NORMAL</SelectItem>
+                        <SelectItem value="LOW">LOW</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="space-y-1">
+                    <Label className="font-semibold text-slate-700">CT Queue</Label>
+                    <input 
+                      type="number" min="0" max="100"
+                      value={waitingTimeState.ct_queue}
+                      onChange={e => setWaitingTimeState({...waitingTimeState, ct_queue: parseInt(e.target.value) || 0})}
+                      className="w-full p-2 bg-slate-50 border border-slate-200 rounded-md font-semibold text-slate-800"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="font-semibold text-slate-700">MRI Queue</Label>
+                    <input 
+                      type="number" min="0" max="100"
+                      value={waitingTimeState.mri_queue}
+                      onChange={e => setWaitingTimeState({...waitingTimeState, mri_queue: parseInt(e.target.value) || 0})}
+                      className="w-full p-2 bg-slate-50 border border-slate-200 rounded-md font-semibold text-slate-800"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="font-semibold text-slate-700">ER Queue</Label>
+                    <input 
+                      type="number" min="0" max="100"
+                      value={waitingTimeState.er_queue}
+                      onChange={e => setWaitingTimeState({...waitingTimeState, er_queue: parseInt(e.target.value) || 0})}
+                      className="w-full p-2 bg-slate-50 border border-slate-200 rounded-md font-semibold text-slate-800"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <Label className="font-semibold text-slate-700">Equipment Utilization ({Math.round(waitingTimeState.equipment_utilization * 100)}%)</Label>
+                    <input 
+                      type="range" min="0" max="1" step="0.01"
+                      value={waitingTimeState.equipment_utilization}
+                      onChange={e => setWaitingTimeState({...waitingTimeState, equipment_utilization: parseFloat(e.target.value)})}
+                      className="w-full accent-teal-600"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="font-semibold text-slate-700">Staff Workload ({Math.round(waitingTimeState.staff_workload * 100)}%)</Label>
+                    <input 
+                      type="range" min="0" max="1" step="0.01"
+                      value={waitingTimeState.staff_workload}
+                      onChange={e => setWaitingTimeState({...waitingTimeState, staff_workload: parseFloat(e.target.value)})}
+                      className="w-full accent-teal-600"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <Label className="font-semibold text-slate-700">Active Emergencies</Label>
+                    <input 
+                      type="number" min="0" max="20"
+                      value={waitingTimeState.active_emergencies}
+                      onChange={e => setWaitingTimeState({...waitingTimeState, active_emergencies: parseInt(e.target.value) || 0})}
+                      className="w-full p-2 bg-slate-50 border border-slate-200 rounded-md font-semibold text-slate-800"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="font-semibold text-slate-700">Historical Avg Processing Time (min)</Label>
+                    <input 
+                      type="number" min="0" max="180"
+                      value={waitingTimeState.historical_avg_processing_time}
+                      onChange={e => setWaitingTimeState({...waitingTimeState, historical_avg_processing_time: parseFloat(e.target.value) || 0})}
+                      className="w-full p-2 bg-slate-50 border border-slate-200 rounded-md font-semibold text-slate-800"
+                    />
+                  </div>
+                </div>
+
+                <Button 
+                  className="w-full bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs h-10 mt-2"
+                  onClick={() => handleRunWaitingTime()}
+                  disabled={waitingTimeLoading}
+                >
+                  {waitingTimeLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Clock className="w-4 h-4 mr-2" />}
+                  Predict Waiting Time (POST /api/intelligence/waiting-time)
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Live Model Output Display */}
+            <Card className="bg-white border-slate-200/80 shadow-xs flex flex-col justify-between">
+              <CardHeader>
+                <div className="flex justify-between items-start">
+                  <div>
+                    <CardTitle className="text-base font-bold text-slate-900 flex items-center">
+                      <Clock className="w-5 h-5 mr-2 text-teal-600" /> ML Predicted Waiting Time
+                    </CardTitle>
+                    <CardDescription className="text-xs">Inference output from flowos_waiting_time_model.pkl</CardDescription>
+                  </div>
+                  {waitingTimeResult && (
+                    <Badge className="bg-teal-600 text-white font-bold text-xs px-3 py-1">
+                      MODEL INFERENCE OK
+                    </Badge>
+                  )}
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4 text-xs">
+                {waitingTimeResult?.prediction ? (
+                  <div className="space-y-4">
+                    {/* Big Display Number */}
+                    <div className="p-6 bg-teal-50 border border-teal-200 rounded-2xl text-center space-y-1">
+                      <span className="text-xs font-bold text-teal-700 uppercase tracking-wider block">
+                        Estimated Procedure Waiting Time
+                      </span>
+                      <div className="text-5xl font-black text-teal-900 font-mono tracking-tight">
+                        {waitingTimeResult.prediction.predicted_waiting_time_minutes}
+                        <span className="text-xl font-bold ml-1.5 text-teal-700">mins</span>
+                      </div>
+                      <p className="text-xs text-slate-500 font-semibold mt-1">
+                        Procedure: {waitingTimeState.procedure_type} • Priority: {waitingTimeState.patient_priority}
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 text-center">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Model Algorithm</span>
+                        <span className="text-xs font-bold text-slate-800">GradientBoostingRegressor</span>
+                      </div>
+                      <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 text-center">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Model Version</span>
+                        <span className="text-xs font-bold text-teal-700">v{waitingTimeResult.prediction.model_version}</span>
+                      </div>
+                    </div>
+
+                    <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-2">
+                      <span className="font-bold text-slate-800 uppercase tracking-wider text-[11px] block">
+                        Clinical Operational Action:
+                      </span>
+                      <p className="text-slate-700 font-medium">
+                        {waitingTimeResult.prediction.predicted_waiting_time_minutes > 60 ? (
+                          <span className="text-amber-800 font-semibold">
+                            ⚠️ Queue delay exceeds 1 hour. Automated alert dispatched to Diagnostic bay to balance scan workload and expedite critical patient queue.
+                          </span>
+                        ) : (
+                          <span className="text-emerald-800 font-semibold">
+                            ✅ Queue flow within optimal operating bounds. Normal patient notification dispatched with estimated slot time.
+                          </span>
+                        )}
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="py-16 text-center text-slate-400 bg-slate-50 rounded-xl border border-dashed border-slate-200 space-y-2">
+                    <Clock className="w-8 h-8 mx-auto text-slate-300" />
+                    <p className="font-semibold text-slate-600">Click "Predict Waiting Time" or select a preset above to execute ML inference</p>
                   </div>
                 )}
               </CardContent>
