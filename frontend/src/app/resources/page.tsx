@@ -38,73 +38,79 @@ export default function ResourcesPage() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'AVAILABLE': return 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20';
-      case 'IN_USE': return 'bg-blue-500/10 text-blue-500 border-blue-500/20';
-      case 'MAINTENANCE': return 'bg-amber-500/10 text-amber-500 border-amber-500/20';
-      case 'UNAVAILABLE': return 'bg-red-500/10 text-red-500 border-red-500/20';
-      default: return 'bg-gray-500/10 text-gray-500 border-gray-500/20';
+      case 'AVAILABLE': return 'bg-emerald-50 text-emerald-800 border-emerald-300 font-semibold';
+      case 'IN_USE': return 'bg-teal-50 text-teal-800 border-teal-300 font-semibold';
+      case 'MAINTENANCE': return 'bg-amber-50 text-amber-800 border-amber-300 font-semibold';
+      case 'UNAVAILABLE': return 'bg-rose-50 text-rose-800 border-rose-300 font-semibold';
+      default: return 'bg-slate-100 text-slate-700 border-slate-300 font-semibold';
     }
   };
 
   if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-gray-950">
-        <Loader2 className="h-8 w-8 animate-spin text-gray-100" />
+      <div className="flex h-screen items-center justify-center bg-slate-50">
+        <Loader2 className="h-8 w-8 animate-spin text-teal-600" />
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="flex h-screen flex-col items-center justify-center space-y-4 bg-gray-950 text-gray-100">
-        <AlertCircle className="h-12 w-12 text-red-500" />
-        <h2 className="text-xl font-semibold">Error Loading Resources</h2>
-        <p className="text-gray-400">{error}</p>
-        <Button onClick={fetchResources} variant="outline" className="border-gray-700 hover:bg-gray-800">
-          Retry
+      <div className="flex h-screen flex-col items-center justify-center space-y-4 bg-slate-50 text-slate-900">
+        <AlertCircle className="h-12 w-12 text-rose-500" />
+        <h2 className="text-xl font-bold">Error Loading Resources</h2>
+        <p className="text-slate-500">{error}</p>
+        <Button onClick={fetchResources} variant="outline" className="border-slate-300 hover:bg-slate-100">
+          Retry Connection
         </Button>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-950 p-6 text-gray-100 space-y-6">
-      <h1 className="text-2xl font-bold flex items-center">
-        <Cpu className="mr-3 text-blue-500" /> Equipment & Facilities
-      </h1>
+    <div className="min-h-screen bg-slate-50 p-6 text-slate-900 space-y-6">
+      <div className="flex items-center space-x-3 mb-4">
+        <div className="p-2 bg-teal-50 border border-teal-100 rounded-xl">
+          <Cpu className="h-7 w-7 text-teal-600" />
+        </div>
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Equipment & Facilities</h1>
+          <p className="text-xs font-medium text-slate-500">Monitor medical equipment, diagnostic tools, and operating theatres</p>
+        </div>
+      </div>
 
       <Tabs defaultValue="equipment" className="w-full">
-        <TabsList className="bg-gray-900 border border-gray-800 mb-6">
-          <TabsTrigger value="equipment" className="data-[state=active]:bg-gray-800 data-[state=active]:text-gray-100">
-            <Cpu className="w-4 h-4 mr-2" /> Equipment ({equipment.length})
+        <TabsList className="bg-white border border-slate-200 shadow-2xs mb-6">
+          <TabsTrigger value="equipment" className="data-[state=active]:bg-teal-50 data-[state=active]:text-teal-700 font-semibold">
+            <Cpu className="w-4 h-4 mr-2 text-teal-600" /> Equipment ({equipment.length})
           </TabsTrigger>
-          <TabsTrigger value="ots" className="data-[state=active]:bg-gray-800 data-[state=active]:text-gray-100">
-            <Scissors className="w-4 h-4 mr-2" /> Operating Theatres ({ots.length})
+          <TabsTrigger value="ots" className="data-[state=active]:bg-teal-50 data-[state=active]:text-teal-700 font-semibold">
+            <Scissors className="w-4 h-4 mr-2 text-teal-600" /> Operating Theatres ({ots.length})
           </TabsTrigger>
         </TabsList>
         
         <TabsContent value="equipment">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {equipment.map(item => (
-              <Card key={item.id} className="bg-gray-900 border-gray-800">
+              <Card key={item.id} className="bg-white border-slate-200/80 shadow-xs hover:shadow-md transition-shadow">
                 <CardContent className="p-4 space-y-3">
                   <div className="flex justify-between items-start">
                     <div>
-                      <h3 className="font-semibold text-gray-200">{item.name}</h3>
-                      <p className="text-xs text-gray-500">{item.department_name || 'Hospital Wide'}</p>
+                      <h3 className="font-bold text-slate-900 text-sm leading-snug">{item.name}</h3>
+                      <p className="text-xs font-medium text-slate-500">{item.department_name || 'Hospital Wide'}</p>
                     </div>
                     <Badge variant="outline" className={getStatusColor(item.status)}>
                       {item.status ? item.status.replace(/_/g, ' ') : 'UNKNOWN'}
                     </Badge>
                   </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-400 bg-gray-950 px-2 py-1 rounded border border-gray-800 text-xs">
+                  <div className="flex items-center justify-between text-xs font-semibold">
+                    <span className="text-slate-700 bg-slate-100 px-2 py-1 rounded border border-slate-200">
                       {item.type}
                     </span>
                   </div>
                   {item.current_patient_id && (
-                    <div className="pt-2 border-t border-gray-800 mt-2">
-                      <p className="text-xs text-gray-500">In use by patient: <span className="text-gray-300">{item.current_patient_id}</span></p>
+                    <div className="pt-2 border-t border-slate-100 mt-2">
+                      <p className="text-xs text-slate-500 font-medium">In use by patient: <span className="text-slate-800 font-bold">{item.current_patient_id}</span></p>
                     </div>
                   )}
                 </CardContent>
@@ -116,16 +122,16 @@ export default function ResourcesPage() {
         <TabsContent value="ots">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {ots.map(ot => (
-              <Card key={ot.id} className="bg-gray-900 border-gray-800">
+              <Card key={ot.id} className="bg-white border-slate-200/80 shadow-xs hover:shadow-md transition-shadow">
                 <CardContent className="p-5 space-y-4">
                   <div className="flex justify-between items-start">
                     <div className="flex items-center">
-                      <div className="w-10 h-10 rounded-full bg-blue-900/30 flex items-center justify-center mr-3 border border-blue-800/50">
-                        <Scissors className="w-5 h-5 text-blue-400" />
+                      <div className="w-10 h-10 rounded-xl bg-teal-50 flex items-center justify-center mr-3 border border-teal-100">
+                        <Scissors className="w-5 h-5 text-teal-600" />
                       </div>
                       <div>
-                        <h3 className="font-bold text-gray-200 text-lg">{ot.name}</h3>
-                        <p className="text-sm text-gray-500">{ot.department_name || 'Surgical Dept'}</p>
+                        <h3 className="font-bold text-slate-900 text-base">{ot.name}</h3>
+                        <p className="text-xs font-medium text-slate-500">{ot.department_name || 'Surgical Dept'}</p>
                       </div>
                     </div>
                     <Badge variant="outline" className={getStatusColor(ot.status)}>
@@ -133,14 +139,14 @@ export default function ResourcesPage() {
                     </Badge>
                   </div>
                   
-                  <div className="bg-gray-950 rounded-lg p-3 border border-gray-800">
-                    <p className="text-xs text-gray-500 mb-1">Current Status</p>
+                  <div className="bg-slate-50 rounded-xl p-3 border border-slate-200/60">
+                    <p className="text-xs font-semibold text-slate-500 uppercase mb-1">Current Status</p>
                     {ot.status === 'IN_USE' ? (
-                      <p className="text-sm text-gray-200 font-medium">Procedure ongoing</p>
+                      <p className="text-xs text-teal-700 font-bold">Procedure Ongoing</p>
                     ) : ot.status === 'CLEANING' || ot.status === 'MAINTENANCE' ? (
-                      <p className="text-sm text-amber-500 font-medium">Cleaning / Maintenance</p>
+                      <p className="text-xs text-amber-700 font-bold">Sanitization / Maintenance</p>
                     ) : (
-                      <p className="text-sm text-emerald-500 font-medium">Ready for use</p>
+                      <p className="text-xs text-emerald-700 font-bold">Ready for Surgery</p>
                     )}
                   </div>
                 </CardContent>

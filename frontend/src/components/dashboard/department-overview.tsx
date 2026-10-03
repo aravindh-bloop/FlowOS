@@ -11,13 +11,13 @@ export function DepartmentOverview({ departments }: { departments: DepartmentSum
         const occupancyRate = Math.round((dept.bed_occupancy_rate || 0) * 100);
         
         return (
-          <Card key={dept.id} className="bg-gray-900 border-gray-800">
+          <Card key={dept.id} className="bg-white border-slate-200/80 shadow-xs hover:shadow-md transition-shadow">
             <CardContent className="p-4">
               <div className="flex justify-between items-start mb-3">
-                <h3 className="font-semibold text-gray-200">{dept.name}</h3>
+                <h3 className="font-semibold text-slate-900">{dept.name}</h3>
                 {dept.active_alerts > 0 && (
-                  <Badge variant="destructive" className="bg-red-900/50 text-red-400 border-red-800">
-                    <AlertCircle className="w-3 h-3 mr-1" />
+                  <Badge variant="outline" className="bg-rose-50 text-rose-700 border-rose-200 font-semibold">
+                    <AlertCircle className="w-3 h-3 mr-1 text-rose-600" />
                     {dept.active_alerts} Alerts
                   </Badge>
                 )}
@@ -25,20 +25,23 @@ export function DepartmentOverview({ departments }: { departments: DepartmentSum
               
               <div className="space-y-4">
                 <div>
-                  <div className="flex justify-between text-xs text-gray-400 mb-1">
+                  <div className="flex justify-between text-xs font-semibold text-slate-500 mb-1">
                     <span>Bed Occupancy</span>
-                    <span>{occupancyRate}%</span>
+                    <span className={occupancyRate >= 85 ? 'text-rose-600 font-bold' : 'text-slate-700'}>{occupancyRate}%</span>
                   </div>
-                  <Progress value={occupancyRate} className="h-1.5 bg-gray-800" />
+                  <Progress 
+                    value={occupancyRate} 
+                    className={`h-2 bg-slate-100 ${occupancyRate >= 85 ? '[&>div]:bg-rose-500' : occupancyRate >= 70 ? '[&>div]:bg-amber-500' : '[&>div]:bg-teal-600'}`} 
+                  />
                 </div>
                 
-                <div className="flex justify-between text-sm text-gray-400">
+                <div className="flex justify-between text-xs font-medium text-slate-600 pt-1">
                   <div className="flex items-center">
-                    <Users className="w-4 h-4 mr-2 text-gray-500" />
+                    <Users className="w-3.5 h-3.5 mr-1.5 text-teal-600" />
                     <span>{dept.patient_count} Patients</span>
                   </div>
                   <div className="flex items-center">
-                    <UserCog className="w-4 h-4 mr-2 text-gray-500" />
+                    <UserCog className="w-3.5 h-3.5 mr-1.5 text-sky-600" />
                     <span>{dept.staff_on_duty} Staff</span>
                   </div>
                 </div>

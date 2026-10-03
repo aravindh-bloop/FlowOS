@@ -4,14 +4,14 @@ import { Separator } from '@/components/ui/separator';
 
 export function BedGrid({ groupedBeds }: { groupedBeds: Record<string, Bed[]> }) {
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {Object.entries(groupedBeds).map(([department, beds]) => (
-        <div key={department} className="bg-gray-900/50 border border-gray-800 rounded-xl p-6">
+        <div key={department} className="bg-white border border-slate-200/80 rounded-xl p-6 shadow-xs">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold text-gray-200">{department}</h2>
-            <span className="text-sm text-gray-500">{beds.length} Beds</span>
+            <h2 className="text-lg font-bold text-slate-800">{department}</h2>
+            <span className="text-xs font-semibold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full border border-slate-200">{beds.length} Beds</span>
           </div>
-          <Separator className="bg-gray-800 mb-6" />
+          <Separator className="bg-slate-200 mb-6" />
           <div className="flex flex-wrap gap-4">
             {beds.map(bed => (
               <BedCard key={bed.id} bed={bed} />

@@ -59,66 +59,72 @@ export default function BedsPage() {
 
   if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-gray-950">
-        <Loader2 className="h-8 w-8 animate-spin text-gray-100" />
+      <div className="flex h-screen items-center justify-center bg-slate-50">
+        <Loader2 className="h-8 w-8 animate-spin text-teal-600" />
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="flex h-screen flex-col items-center justify-center space-y-4 bg-gray-950 text-gray-100">
-        <AlertCircle className="h-12 w-12 text-red-500" />
-        <h2 className="text-xl font-semibold">Error Loading Beds</h2>
-        <p className="text-gray-400">{error}</p>
-        <Button onClick={fetchData} variant="outline" className="border-gray-700 hover:bg-gray-800">
-          Retry
+      <div className="flex h-screen flex-col items-center justify-center space-y-4 bg-slate-50 text-slate-900">
+        <AlertCircle className="h-12 w-12 text-rose-500" />
+        <h2 className="text-xl font-bold">Error Loading Beds</h2>
+        <p className="text-slate-500">{error}</p>
+        <Button onClick={fetchData} variant="outline" className="border-slate-300 hover:bg-slate-100">
+          Retry Connection
         </Button>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-950 p-6 text-gray-100 space-y-6">
+    <div className="min-h-screen bg-slate-50 p-6 text-slate-900 space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold flex items-center">
-          <BedDouble className="mr-3 text-blue-500" /> Bed Management
-        </h1>
-      </div>
-
-      <div className="bg-gray-900 border border-gray-800 rounded-xl p-4 flex flex-wrap gap-6 items-center justify-around">
-        <div className="text-center">
-          <p className="text-sm text-gray-400">Total Beds</p>
-          <p className="text-2xl font-bold text-gray-200">{summary.total}</p>
-        </div>
-        <div className="text-center">
-          <p className="text-sm text-gray-400">Available</p>
-          <p className="text-2xl font-bold text-emerald-500">{summary.available}</p>
-        </div>
-        <div className="text-center">
-          <p className="text-sm text-gray-400">Occupied</p>
-          <p className="text-2xl font-bold text-blue-500">{summary.occupied}</p>
-        </div>
-        <div className="text-center">
-          <p className="text-sm text-gray-400">Reserved</p>
-          <p className="text-2xl font-bold text-amber-500">{summary.reserved}</p>
-        </div>
-        <div className="text-center">
-          <p className="text-sm text-gray-400">Maintenance</p>
-          <p className="text-2xl font-bold text-gray-500">{summary.maintenance}</p>
-        </div>
-        <div className="text-center">
-          <p className="text-sm text-gray-400">Unavailable</p>
-          <p className="text-2xl font-bold text-red-500">{summary.unavailable}</p>
+        <div className="flex items-center space-x-3">
+          <div className="p-2 bg-teal-50 border border-teal-100 rounded-xl">
+            <BedDouble className="h-7 w-7 text-teal-600" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight text-slate-900">Bed Management</h1>
+            <p className="text-xs font-medium text-slate-500">Real-time bed allocation and ward occupancy grid</p>
+          </div>
         </div>
       </div>
 
-      <div className="flex gap-4">
+      <div className="bg-white border border-slate-200/80 rounded-xl p-5 flex flex-wrap gap-6 items-center justify-around shadow-xs">
+        <div className="text-center">
+          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Beds</p>
+          <p className="text-2xl font-bold text-slate-900">{summary.total}</p>
+        </div>
+        <div className="text-center">
+          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Available</p>
+          <p className="text-2xl font-bold text-emerald-600">{summary.available}</p>
+        </div>
+        <div className="text-center">
+          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Occupied</p>
+          <p className="text-2xl font-bold text-teal-600">{summary.occupied}</p>
+        </div>
+        <div className="text-center">
+          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Reserved</p>
+          <p className="text-2xl font-bold text-amber-600">{summary.reserved}</p>
+        </div>
+        <div className="text-center">
+          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Maintenance</p>
+          <p className="text-2xl font-bold text-slate-600">{summary.maintenance}</p>
+        </div>
+        <div className="text-center">
+          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Unavailable</p>
+          <p className="text-2xl font-bold text-rose-600">{summary.unavailable}</p>
+        </div>
+      </div>
+
+      <div className="flex flex-wrap gap-4">
         <Select value={deptFilter} onValueChange={(val: string | null) => val && setDeptFilter(val)}>
-          <SelectTrigger className="w-[180px] bg-gray-900 border-gray-800">
+          <SelectTrigger className="w-[180px] bg-white border-slate-200 text-slate-800">
             <SelectValue placeholder="Department" />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="bg-white border-slate-200 text-slate-800">
             <SelectItem value="ALL">All Departments</SelectItem>
             <SelectItem value="Emergency">Emergency</SelectItem>
             <SelectItem value="ICU">ICU</SelectItem>
@@ -129,10 +135,10 @@ export default function BedsPage() {
         </Select>
 
         <Select value={statusFilter} onValueChange={(val: string | null) => val && setStatusFilter(val)}>
-          <SelectTrigger className="w-[180px] bg-gray-900 border-gray-800">
+          <SelectTrigger className="w-[180px] bg-white border-slate-200 text-slate-800">
             <SelectValue placeholder="Status" />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="bg-white border-slate-200 text-slate-800">
             <SelectItem value="ALL">All Status</SelectItem>
             <SelectItem value="AVAILABLE">Available</SelectItem>
             <SelectItem value="OCCUPIED">Occupied</SelectItem>
@@ -143,10 +149,10 @@ export default function BedsPage() {
         </Select>
 
         <Select value={typeFilter} onValueChange={(val: string | null) => val && setTypeFilter(val)}>
-          <SelectTrigger className="w-[180px] bg-gray-900 border-gray-800">
+          <SelectTrigger className="w-[180px] bg-white border-slate-200 text-slate-800">
             <SelectValue placeholder="Bed Type" />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="bg-white border-slate-200 text-slate-800">
             <SelectItem value="ALL">All Types</SelectItem>
             <SelectItem value="REGULAR">Regular</SelectItem>
             <SelectItem value="ICU">ICU</SelectItem>
@@ -157,8 +163,8 @@ export default function BedsPage() {
       </div>
 
       {Object.keys(groupedBeds).length === 0 ? (
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-12 text-center text-gray-500">
-          No beds found matching filters
+        <div className="bg-white border border-slate-200/80 rounded-xl p-12 text-center text-slate-400 shadow-xs">
+          No beds found matching selected filters.
         </div>
       ) : (
         <BedGrid groupedBeds={groupedBeds} />
