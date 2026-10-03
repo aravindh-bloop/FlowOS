@@ -92,4 +92,8 @@ export const updateDiagnosticStatus = (queue_id: number, status: string): Promis
 export const recordPatientMovement = (patient_id: number, from_location: string, to_location: string): Promise<any> => api.post(`/staff-portal/patients/${patient_id}/movement`, { from_location, to_location }).then((res) => res.data);
 export const recordPatientObservation = (patient_id: number, category: string, value: string, notes?: string): Promise<any> => api.post(`/staff-portal/patients/${patient_id}/observations`, { category, value, notes }).then((res) => res.data);
 
+// ML Hybrid Anomaly Detection Endpoints
+export const runAnomalyDetection = (hospitalState: any): Promise<any> => api.post('/intelligence/anomaly-detection', hospitalState).then((res) => res.data);
+export const getLiveAnomalies = (): Promise<any> => api.get('/anomalies/live').then((res) => res.data);
+
 export default api;

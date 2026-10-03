@@ -17,10 +17,39 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 
+import { runAnomalyDetection } from '@/lib/api';
+import { ShieldAlert } from 'lucide-react';
+
 export default function IntelligencePage() {
   const [predictions, setPredictions] = useState<Prediction[]>([]);
   const [bottlenecks, setBottlenecks] = useState<Bottleneck[]>([]);
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
+
+  // ML Anomaly Detection state
+  const [anomalyState, setAnomalyState] = useState({
+    hour: 14,
+    day_of_week: 2,
+    is_weekend: 0,
+    er_arrivals: 8,
+    admissions: 5,
+    discharges: 4,
+    er_queue: 5,
+    bed_occupancy: 0.968,
+    available_beds: 12,
+    icu_occupancy: 0.995,
+    available_icu_beds: 0,
+    ct_queue: 8,
+    mri_queue: 5,
+    equipment_utilization: 0.82,
+    avg_diagnostic_wait: 45,
+    staff_workload: 0.77,
+    active_emergencies: 1,
+    avg_transfer_time: 20,
+    pending_tasks: 30
+  });
+
+  const [anomalyResult, setAnomalyResult] = useState<any>(null);
+  const [anomalyLoading, setAnomalyLoading] = useState(false);
   
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
@@ -29,6 +58,19 @@ export default function IntelligencePage() {
   const [approveNotes, setApproveNotes] = useState('');
   const [selectedRecId, setSelectedRecId] = useState<number | null>(null);
   const [dialogMode, setDialogMode] = useState<'approve' | 'reject' | null>(null);
+
+  const handleRunAnomalyDetection = async (customState?: any) => {
+    setAnomalyLoading(true);
+    try {
+      const stateToUse = customState || anomalyState;
+      const res = await runAnomalyDetection(stateToUse);
+      setAnomalyResult(res);
+    } catch (err) {
+      console.error("Anomaly Detection Error:", err);
+    } finally {
+      setAnomalyLoading(false);
+    }
+  };
 
   const fetchData = async () => {
     try {
@@ -133,10 +175,13 @@ export default function IntelligencePage() {
       </div>
 
       <Tabs defaultValue="predictions" className="w-full">
-        <TabsList className="bg-white border border-slate-200 shadow-2xs mb-6">
-          <TabsTrigger value="predictions" className="data-[state=active]:bg-teal-50 data-[state=active]:text-teal-700 font-semibold">Predictions</TabsTrigger>
-          <TabsTrigger value="bottlenecks" className="data-[state=active]:bg-teal-50 data-[state=active]:text-teal-700 font-semibold">Bottlenecks</TabsTrigger>
-          <TabsTrigger value="recommendations" className="data-[state=active]:bg-teal-50 data-[state=active]:text-teal-700 font-semibold">Recommendations</TabsTrigger>
+        <TabsList className="bg-white border border-slate-200 shadow-2xs mb-6 p-1">
+          <TabsTrigger value="predictions" className="data-[state=active]:bg-teal-50 data-[state=active]:text-teal-700 font-semibold text-xs">Predictions</TabsTrigger>
+          <TabsTrigger value="bottlenecks" className="data-[state=active]:bg-teal-50 data-[state=active]:text-teal-700 font-semibold text-xs">Bottlenecks</TabsTrigger>
+          <TabsTrigger value="recommendations" className="data-[state=active]:bg-teal-50 data-[state=active]:text-teal-700 font-semibold text-xs">Recommendations</TabsTrigger>
+          <TabsTrigger value="anomalies" className="data-[state=active]:bg-teal-50 data-[state=active]:text-teal-700 font-bold text-xs flex items-center">
+            <ShieldAlert className="w-3.5 h-3.5 mr-1.5 text-indigo-600" /> ML Anomaly Detector (v1.0.0)
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="predictions" className="space-y-4">
@@ -316,6 +361,239 @@ export default function IntelligencePage() {
                 No active recommendations.
               </div>
             )}
+          </div>
+        </TabsContent>
+
+        {/* TAB 4: ML ANOMALY DETECTOR (v1.0.0) */}
+        <TabsContent value="anomalies" className="space-y-6">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
+            <div>
+              <div className="flex items-center space-x-2">
+                <Badge className="bg-indigo-100 text-indigo-800 border-indigo-300 font-bold text-xs">
+                  MODEL: flowos_anomaly_model.pkl (v1.0.0)
+                </Badge>
+                <Badge variant="outline" className="bg-teal-50 text-teal-700 border-teal-200 font-bold text-xs">
+                  IsolationForest + Hybrid Rule Engine
+                </Badge>
+              </div>
+              <h2 className="text-xl font-bold text-slate-900 mt-2">Flow OS ML Anomaly Detection Engine</h2>
+              <p className="text-xs text-slate-500 font-medium mt-0.5">
+                Evaluates hospital operational telemetry against scikit-learn decision functions and operational safety rules in real time.
+              </p>
+            </div>
+
+            {/* Scenario Preset Buttons */}
+            <div className="flex flex-wrap items-center gap-2">
+              <Button 
+                size="sm" 
+                variant="outline"
+                className="border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100 font-bold text-xs"
+                onClick={() => {
+                  const state = {
+                    hour: 10, day_of_week: 2, is_weekend: 0, er_arrivals: 5, admissions: 3, discharges: 4, er_queue: 3,
+                    bed_occupancy: 0.75, available_beds: 35, icu_occupancy: 0.70, available_icu_beds: 6, ct_queue: 4,
+                    mri_queue: 3, equipment_utilization: 0.65, avg_diagnostic_wait: 30, staff_workload: 0.60,
+                    active_emergencies: 0, avg_transfer_time: 15, pending_tasks: 15
+                  };
+                  setAnomalyState(state);
+                  handleRunAnomalyDetection(state);
+                }}
+              >
+                Preset 1: Normal Baseline
+              </Button>
+              <Button 
+                size="sm" 
+                variant="outline"
+                className="border-rose-300 bg-rose-50 text-rose-800 hover:bg-rose-100 font-bold text-xs"
+                onClick={() => {
+                  const state = {
+                    hour: 14, day_of_week: 3, is_weekend: 0, er_arrivals: 8, admissions: 5, discharges: 2, er_queue: 5,
+                    bed_occupancy: 0.90, available_beds: 10, icu_occupancy: 0.995, available_icu_beds: 0, ct_queue: 6,
+                    mri_queue: 4, equipment_utilization: 0.75, avg_diagnostic_wait: 40, staff_workload: 0.80,
+                    active_emergencies: 1, avg_transfer_time: 25, pending_tasks: 25
+                  };
+                  setAnomalyState(state);
+                  handleRunAnomalyDetection(state);
+                }}
+              >
+                Preset 2: ICU Pressure Surge
+              </Button>
+              <Button 
+                size="sm" 
+                variant="outline"
+                className="border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100 font-bold text-xs"
+                onClick={() => {
+                  const state = {
+                    hour: 11, day_of_week: 1, is_weekend: 0, er_arrivals: 6, admissions: 4, discharges: 3, er_queue: 4,
+                    bed_occupancy: 0.82, available_beds: 20, icu_occupancy: 0.80, available_icu_beds: 4, ct_queue: 25,
+                    mri_queue: 8, equipment_utilization: 0.88, avg_diagnostic_wait: 95, staff_workload: 0.75,
+                    active_emergencies: 0, avg_transfer_time: 20, pending_tasks: 20
+                  };
+                  setAnomalyState(state);
+                  handleRunAnomalyDetection(state);
+                }}
+              >
+                Preset 3: Diagnostic Bottleneck
+              </Button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Input Telemetry Form */}
+            <Card className="bg-white border-slate-200/80 shadow-xs">
+              <CardHeader>
+                <CardTitle className="text-base font-bold text-slate-900 flex items-center">
+                  <Brain className="w-5 h-5 mr-2 text-indigo-600" /> Hospital Operational Inputs
+                </CardTitle>
+                <CardDescription className="text-xs">Adjust hospital metrics to test the ML anomaly decision boundary</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4 text-xs">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <Label className="font-semibold text-slate-700">ICU Occupancy ({Math.round(anomalyState.icu_occupancy * 100)}%)</Label>
+                    <input 
+                      type="range" min="0" max="1" step="0.005"
+                      value={anomalyState.icu_occupancy}
+                      onChange={e => setAnomalyState({...anomalyState, icu_occupancy: parseFloat(e.target.value)})}
+                      className="w-full accent-teal-600"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="font-semibold text-slate-700">Available ICU Beds</Label>
+                    <input 
+                      type="number" min="0" max="50"
+                      value={anomalyState.available_icu_beds}
+                      onChange={e => setAnomalyState({...anomalyState, available_icu_beds: parseInt(e.target.value) || 0})}
+                      className="w-full p-2 bg-slate-50 border border-slate-200 rounded-md font-semibold text-slate-800"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <Label className="font-semibold text-slate-700">CT Queue Size</Label>
+                    <input 
+                      type="number" min="0" max="100"
+                      value={anomalyState.ct_queue}
+                      onChange={e => setAnomalyState({...anomalyState, ct_queue: parseInt(e.target.value) || 0})}
+                      className="w-full p-2 bg-slate-50 border border-slate-200 rounded-md font-semibold text-slate-800"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="font-semibold text-slate-700">Avg Diagnostic Wait (min)</Label>
+                    <input 
+                      type="number" min="0" max="300"
+                      value={anomalyState.avg_diagnostic_wait}
+                      onChange={e => setAnomalyState({...anomalyState, avg_diagnostic_wait: parseFloat(e.target.value) || 0})}
+                      className="w-full p-2 bg-slate-50 border border-slate-200 rounded-md font-semibold text-slate-800"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <Label className="font-semibold text-slate-700">Staff Workload ({Math.round(anomalyState.staff_workload * 100)}%)</Label>
+                    <input 
+                      type="range" min="0" max="1" step="0.01"
+                      value={anomalyState.staff_workload}
+                      onChange={e => setAnomalyState({...anomalyState, staff_workload: parseFloat(e.target.value)})}
+                      className="w-full accent-teal-600"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="font-semibold text-slate-700">Pending Tasks Count</Label>
+                    <input 
+                      type="number" min="0" max="200"
+                      value={anomalyState.pending_tasks}
+                      onChange={e => setAnomalyState({...anomalyState, pending_tasks: parseInt(e.target.value) || 0})}
+                      className="w-full p-2 bg-slate-50 border border-slate-200 rounded-md font-semibold text-slate-800"
+                    />
+                  </div>
+                </div>
+
+                <Button 
+                  className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs h-10 mt-2"
+                  onClick={() => handleRunAnomalyDetection()}
+                  disabled={anomalyLoading}
+                >
+                  {anomalyLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Zap className="w-4 h-4 mr-2" />}
+                  Run Hybrid ML Anomaly Evaluation (POST /api/intelligence/anomaly-detection)
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Live Model Output Display */}
+            <Card className="bg-white border-slate-200/80 shadow-xs flex flex-col justify-between">
+              <CardHeader>
+                <div className="flex justify-between items-start">
+                  <div>
+                    <CardTitle className="text-base font-bold text-slate-900 flex items-center">
+                      <ShieldAlert className="w-5 h-5 mr-2 text-indigo-600" /> ML Model Evaluation Output
+                    </CardTitle>
+                    <CardDescription className="text-xs">Result returned from flowos_anomaly_model.pkl</CardDescription>
+                  </div>
+                  {anomalyResult && (
+                    <Badge className={
+                      anomalyResult.overall_severity === 'CRITICAL' ? 'bg-rose-600 text-white font-bold text-xs px-3 py-1' :
+                      anomalyResult.overall_severity === 'HIGH' ? 'bg-amber-500 text-white font-bold text-xs px-3 py-1' :
+                      anomalyResult.overall_severity === 'MEDIUM' ? 'bg-sky-600 text-white font-bold text-xs px-3 py-1' :
+                      'bg-emerald-600 text-white font-bold text-xs px-3 py-1'
+                    }>
+                      OVERALL SEVERITY: {anomalyResult.overall_severity}
+                    </Badge>
+                  )}
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4 text-xs">
+                {anomalyResult ? (
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-3 gap-3">
+                      <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 text-center">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Is Anomaly</span>
+                        <span className={`text-base font-bold ${anomalyResult.is_anomaly ? 'text-rose-600' : 'text-emerald-600'}`}>
+                          {anomalyResult.is_anomaly ? 'TRUE' : 'FALSE'}
+                        </span>
+                      </div>
+                      <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 text-center">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">ML Score</span>
+                        <span className="text-base font-bold font-mono text-slate-800">{anomalyResult.ml_score}</span>
+                      </div>
+                      <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 text-center">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Model Version</span>
+                        <span className="text-base font-bold text-teal-700">{anomalyResult.model_version}</span>
+                      </div>
+                    </div>
+
+                    <div>
+                      <h4 className="font-bold text-slate-800 text-xs uppercase tracking-wider mb-2">Detected Operational & Statistical Anomalies</h4>
+                      {anomalyResult.operational_anomalies?.length > 0 ? (
+                        <div className="space-y-2">
+                          {anomalyResult.operational_anomalies.map((ano: any, idx: number) => (
+                            <div key={idx} className="bg-rose-50 border border-rose-200 p-3 rounded-xl space-y-1">
+                              <div className="flex justify-between items-center">
+                                <span className="font-bold text-rose-900 uppercase tracking-wide text-[11px]">{ano.type}</span>
+                                <Badge className="bg-rose-600 text-white font-bold text-[10px]">{ano.severity}</Badge>
+                              </div>
+                              <p className="text-rose-800 font-semibold leading-snug">{ano.reason}</p>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="bg-emerald-50 border border-emerald-200 p-4 rounded-xl text-center text-emerald-800 font-bold">
+                          <CheckCircle className="w-5 h-5 mx-auto mb-1 text-emerald-600" />
+                          No operational or statistical anomalies detected. Hospital running within baseline threshold.
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="py-12 text-center text-slate-400 bg-slate-50 rounded-xl border border-dashed border-slate-200 space-y-2">
+                    <Zap className="w-8 h-8 mx-auto text-slate-300" />
+                    <p className="font-semibold text-slate-600">Click "Run Hybrid ML Anomaly Evaluation" or select a preset above to execute predictions</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </div>
         </TabsContent>
       </Tabs>
