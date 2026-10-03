@@ -37,4 +37,4 @@ class NotificationResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 class AcknowledgeAlertRequest(BaseModel):
-    user_id: int
+    user_id: Optional[int] = None

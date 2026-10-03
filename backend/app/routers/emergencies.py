@@ -11,7 +11,7 @@ from app.models.alert import Alert
 class EmergencyCreate(BaseModel):
     type: Optional[str] = "MASS_CASUALTY"
     severity: Optional[str] = "CRITICAL"
-    description: str
+    description: Optional[str] = "Emergency situation declared"
     title: Optional[str] = None
     departmentId: Optional[str] = None
 
@@ -21,8 +21,12 @@ class EmergencyRespond(BaseModel):
 router = APIRouter(prefix="/api/emergencies", tags=["emergencies"])
 
 @router.post("", response_model=AlertResponse)
-def create_emergency(req: EmergencyCreate, db: Session = Depends(get_db), current_user = Depends(get_current_user)):
-    return declare_emergency(db, type_=req.type or "MASS_CASUALTY", severity=req.severity or "CRITICAL", description=req.description, title=req.title)
+def create_emergency(req: Optional[EmergencyCreate] = None, db: Session = Depends(get_db), current_user = Depends(get_current_user)):
+    type_ = req.type if req and req.type else "MASS_CASUALTY"
+    severity = req.severity if req and req.severity else "CRITICAL"
+    description = req.description if req and req.description else "Emergency situation declared"
+    title = req.title if req else None
+    return declare_emergency(db, type_=type_, severity=severity, description=description, title=title)
 
 @router.get("", response_model=List[AlertResponse])
 def read_emergencies(db: Session = Depends(get_db), current_user = Depends(get_current_user)):
