@@ -46,6 +46,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 export default function StaffPortalPage() {
   const [profile, setProfile] = useState<any>(null);
   const [activeRole, setActiveRole] = useState<string>('NURSE'); // 'DOCTOR' | 'NURSE' | 'TECHNICIAN'
+  const [activeTab, setActiveTab] = useState<string>('tasks');
   
   const [patients, setPatients] = useState<any[]>([]);
   const [tasks, setTasks] = useState<any[]>([]);
@@ -104,6 +105,13 @@ export default function StaffPortalPage() {
 
   const handleRoleChange = (newRole: string) => {
     setActiveRole(newRole);
+    if (newRole === 'TECHNICIAN') {
+      setActiveTab('diagnostics');
+    } else if (newRole === 'DOCTOR') {
+      setActiveTab('patients');
+    } else {
+      setActiveTab('tasks');
+    }
     loadPortalData(newRole);
   };
 
@@ -274,11 +282,15 @@ export default function StaffPortalPage() {
         <Card className="bg-white border-slate-200/80 shadow-xs">
           <CardContent className="p-4 flex items-center justify-between">
             <div>
-              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Assigned Patients</p>
-              <p className="text-2xl font-bold text-slate-900 mt-1">{patients.length}</p>
+              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                {activeRole === 'TECHNICIAN' ? 'Diagnostic Queue Items' : 'Assigned Patients'}
+              </p>
+              <p className="text-2xl font-bold text-slate-900 mt-1">
+                {activeRole === 'TECHNICIAN' ? diagnosticsQueue.length : patients.length}
+              </p>
             </div>
             <div className="p-2.5 bg-teal-50 text-teal-600 rounded-xl">
-              <User className="w-5 h-5" />
+              {activeRole === 'TECHNICIAN' ? <Cpu className="w-5 h-5" /> : <User className="w-5 h-5" />}
             </div>
           </CardContent>
         </Card>
@@ -300,11 +312,17 @@ export default function StaffPortalPage() {
         <Card className="bg-white border-slate-200/80 shadow-xs">
           <CardContent className="p-4 flex items-center justify-between">
             <div>
-              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Diagnostic Queue</p>
-              <p className="text-2xl font-bold text-slate-900 mt-1">{diagnosticsQueue.length}</p>
+              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                {activeRole === 'TECHNICIAN' ? 'Active Diagnostic Scans' : 'Diagnostic Requests'}
+              </p>
+              <p className="text-2xl font-bold text-slate-900 mt-1">
+                {activeRole === 'TECHNICIAN' 
+                  ? diagnosticsQueue.filter(q => q.status === 'IN_PROGRESS' || q.status === 'WAITING').length 
+                  : diagnosticsQueue.length}
+              </p>
             </div>
             <div className="p-2.5 bg-indigo-50 text-indigo-600 rounded-xl">
-              <Cpu className="w-5 h-5" />
+              <Clock className="w-5 h-5" />
             </div>
           </CardContent>
         </Card>
@@ -325,18 +343,106 @@ export default function StaffPortalPage() {
       </div>
 
       {/* Main Tabs Workspace */}
-      <Tabs defaultValue="tasks" className="w-full">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="bg-white border border-slate-200 shadow-2xs mb-6 p-1">
-          <TabsTrigger value="tasks" className="data-[state=active]:bg-teal-50 data-[state=active]:text-teal-700 font-bold text-xs">
-            <Activity className="w-3.5 h-3.5 mr-1.5" /> My Tasks & Actions ({tasks.filter(t => t.status !== 'COMPLETED').length})
-          </TabsTrigger>
-          <TabsTrigger value="patients" className="data-[state=active]:bg-teal-50 data-[state=active]:text-teal-700 font-bold text-xs">
-            <User className="w-3.5 h-3.5 mr-1.5" /> My Patients ({patients.length})
-          </TabsTrigger>
-          <TabsTrigger value="role-hub" className="data-[state=active]:bg-teal-50 data-[state=active]:text-teal-700 font-bold text-xs">
-            <Stethoscope className="w-3.5 h-3.5 mr-1.5" /> {activeRole} Operational Hub
-          </TabsTrigger>
+          {activeRole === 'TECHNICIAN' ? (
+            <>
+              <TabsTrigger value="diagnostics" className="data-[state=active]:bg-teal-50 data-[state=active]:text-teal-700 font-bold text-xs">
+                <Cpu className="w-3.5 h-3.5 mr-1.5" /> Diagnostic Scan Queue ({diagnosticsQueue.filter(q => q.status !== 'COMPLETED').length})
+              </TabsTrigger>
+              <TabsTrigger value="tasks" className="data-[state=active]:bg-teal-50 data-[state=active]:text-teal-700 font-bold text-xs">
+                <Activity className="w-3.5 h-3.5 mr-1.5" /> Maintenance & Actions ({tasks.filter(t => t.status !== 'COMPLETED').length})
+              </TabsTrigger>
+              <TabsTrigger value="role-hub" className="data-[state=active]:bg-teal-50 data-[state=active]:text-teal-700 font-bold text-xs">
+                <Cpu className="w-3.5 h-3.5 mr-1.5" /> Equipment & Facility Hub
+              </TabsTrigger>
+            </>
+          ) : activeRole === 'NURSE' ? (
+            <>
+              <TabsTrigger value="tasks" className="data-[state=active]:bg-teal-50 data-[state=active]:text-teal-700 font-bold text-xs">
+                <Activity className="w-3.5 h-3.5 mr-1.5" /> My Tasks & Nursing Actions ({tasks.filter(t => t.status !== 'COMPLETED').length})
+              </TabsTrigger>
+              <TabsTrigger value="patients" className="data-[state=active]:bg-teal-50 data-[state=active]:text-teal-700 font-bold text-xs">
+                <User className="w-3.5 h-3.5 mr-1.5" /> Assigned Patients ({patients.length})
+              </TabsTrigger>
+              <TabsTrigger value="role-hub" className="data-[state=active]:bg-teal-50 data-[state=active]:text-teal-700 font-bold text-xs">
+                <Stethoscope className="w-3.5 h-3.5 mr-1.5" /> Patient Movement & Vitals Hub
+              </TabsTrigger>
+            </>
+          ) : (
+            <>
+              <TabsTrigger value="patients" className="data-[state=active]:bg-teal-50 data-[state=active]:text-teal-700 font-bold text-xs">
+                <User className="w-3.5 h-3.5 mr-1.5" /> Assigned Patients & AI Summaries ({patients.length})
+              </TabsTrigger>
+              <TabsTrigger value="tasks" className="data-[state=active]:bg-teal-50 data-[state=active]:text-teal-700 font-bold text-xs">
+                <Activity className="w-3.5 h-3.5 mr-1.5" /> Clinical Tasks ({tasks.filter(t => t.status !== 'COMPLETED').length})
+              </TabsTrigger>
+              <TabsTrigger value="role-hub" className="data-[state=active]:bg-teal-50 data-[state=active]:text-teal-700 font-bold text-xs">
+                <FileText className="w-3.5 h-3.5 mr-1.5" /> Doctor Consultations & Reviews
+              </TabsTrigger>
+            </>
+          )}
         </TabsList>
+
+        {/* TAB: DIAGNOSTICS (Technicians primary) */}
+        <TabsContent value="diagnostics" className="space-y-4">
+          <Card className="bg-white border-slate-200/80 shadow-xs">
+            <CardHeader>
+              <CardTitle className="text-base font-bold text-slate-900 flex items-center">
+                <Cpu className="w-5 h-5 mr-2 text-teal-600" /> Diagnostic Scan Execution Queue
+              </CardTitle>
+              <CardDescription className="text-xs">Manage CT, MRI, and X-Ray procedures in real-time</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {diagnosticsQueue.map(q => (
+                  <div key={q.id} className="bg-slate-50 border border-slate-200 p-4 rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div>
+                      <div className="flex items-center space-x-2">
+                        <span className="font-bold text-slate-900 text-base">{q.scan_type}</span>
+                        <Badge variant="outline" className="bg-teal-100 text-teal-800 border-teal-300 font-bold text-[10px]">
+                          {q.priority} PRIORITY
+                        </Badge>
+                      </div>
+                      <p className="text-xs font-semibold text-slate-600 mt-1">
+                        Patient: {q.patient_name} ({q.mrn}) • Device: {q.equipment_name}
+                      </p>
+                    </div>
+
+                    <div className="flex items-center space-x-3">
+                      <span className="text-xs font-bold text-slate-500">Status: <span className="text-teal-700">{q.status}</span></span>
+                      {q.status === 'WAITING' && (
+                        <Button 
+                          size="sm" 
+                          className="bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs h-8"
+                          onClick={() => handleDiagnosticStatus(q.id, 'IN_PROGRESS')}
+                          disabled={actionLoading}
+                        >
+                          <Play className="w-3 h-3 mr-1" /> Start Scan
+                        </Button>
+                      )}
+                      {q.status === 'IN_PROGRESS' && (
+                        <Button 
+                          size="sm" 
+                          className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs h-8"
+                          onClick={() => handleDiagnosticStatus(q.id, 'COMPLETED')}
+                          disabled={actionLoading}
+                        >
+                          <CheckCircle className="w-3 h-3 mr-1" /> Complete Scan
+                        </Button>
+                      )}
+                      {q.status === 'COMPLETED' && (
+                        <Badge className="bg-emerald-100 text-emerald-800 border-emerald-300 font-bold text-xs">
+                          <CheckCircle className="w-3 h-3 mr-1 inline" /> Completed
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
         {/* TAB 1: TASKS */}
         <TabsContent value="tasks" className="space-y-4">
@@ -422,7 +528,7 @@ export default function StaffPortalPage() {
           </div>
         </TabsContent>
 
-        {/* TAB 2: MY PATIENTS */}
+        {/* TAB 2: MY PATIENTS (Doctors and Nurses) */}
         <TabsContent value="patients" className="space-y-4">
           <div className="flex justify-between items-center">
             <h2 className="text-lg font-bold text-slate-800">Assigned Patient Roster</h2>
@@ -547,57 +653,70 @@ export default function StaffPortalPage() {
           )}
 
           {activeRole === 'TECHNICIAN' && (
-            <Card className="bg-white border-slate-200/80 shadow-xs">
-              <CardHeader>
-                <CardTitle className="text-base font-bold text-slate-900 flex items-center">
-                  <Cpu className="w-5 h-5 mr-2 text-teal-600" /> Diagnostic Scan Execution Queue
-                </CardTitle>
-                <CardDescription className="text-xs">Manage CT, MRI, and X-Ray procedures in real-time</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {diagnosticsQueue.map(q => (
-                    <div key={q.id} className="bg-slate-50 border border-slate-200 p-4 rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
-                      <div>
-                        <div className="flex items-center space-x-2">
-                          <span className="font-bold text-slate-900 text-base">{q.scan_type}</span>
-                          <Badge variant="outline" className="bg-teal-100 text-teal-800 border-teal-300 font-bold text-[10px]">
-                            {q.priority} PRIORITY
-                          </Badge>
-                        </div>
-                        <p className="text-xs font-semibold text-slate-600 mt-1">
-                          Patient: {q.patient_name} ({q.mrn}) • Device: {q.equipment_name}
-                        </p>
-                      </div>
-
-                      <div className="flex items-center space-x-3">
-                        <span className="text-xs font-bold text-slate-500">Status: <span className="text-teal-700">{q.status}</span></span>
-                        {q.status === 'WAITING' && (
-                          <Button 
-                            size="sm" 
-                            className="bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs h-8"
-                            onClick={() => handleDiagnosticStatus(q.id, 'IN_PROGRESS')}
-                            disabled={actionLoading}
-                          >
-                            <Play className="w-3 h-3 mr-1" /> Start Scan
-                          </Button>
-                        )}
-                        {q.status === 'IN_PROGRESS' && (
-                          <Button 
-                            size="sm" 
-                            className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs h-8"
-                            onClick={() => handleDiagnosticStatus(q.id, 'COMPLETED')}
-                            disabled={actionLoading}
-                          >
-                            <CheckCircle className="w-3 h-3 mr-1" /> Complete Scan
-                          </Button>
-                        )}
-                      </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card className="bg-white border-slate-200/80 shadow-xs">
+                <CardHeader>
+                  <CardTitle className="text-base font-bold text-slate-900 flex items-center">
+                    <Cpu className="w-5 h-5 mr-2 text-teal-600" /> Diagnostic Equipment & Readiness State
+                  </CardTitle>
+                  <CardDescription className="text-xs">Live status of imaging machinery & technical infrastructure</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3 text-xs">
+                  <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 flex justify-between items-center">
+                    <div>
+                      <h4 className="font-bold text-slate-900 text-sm">CT Scanner #1 (Siemens Somatom)</h4>
+                      <p className="text-slate-500 font-medium text-[11px]">Location: Radiology CT Bay A</p>
                     </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+                    <Badge className="bg-emerald-100 text-emerald-800 border-emerald-300 font-bold">OPERATIONAL</Badge>
+                  </div>
+                  <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 flex justify-between items-center">
+                    <div>
+                      <h4 className="font-bold text-slate-900 text-sm">MRI Scanner #2 (3T Magnetom)</h4>
+                      <p className="text-slate-500 font-medium text-[11px]">Location: Radiology MRI Suite 02</p>
+                    </div>
+                    <Badge className="bg-teal-100 text-teal-800 border-teal-300 font-bold">SCAN IN PROGRESS</Badge>
+                  </div>
+                  <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 flex justify-between items-center">
+                    <div>
+                      <h4 className="font-bold text-slate-900 text-sm">Portable X-Ray Unit-B</h4>
+                      <p className="text-slate-500 font-medium text-[11px]">Location: ED Resus Bay 03</p>
+                    </div>
+                    <Badge className="bg-sky-100 text-sky-800 border-sky-300 font-bold">STANDBY / READY</Badge>
+                  </div>
+                  <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 flex justify-between items-center">
+                    <div>
+                      <h4 className="font-bold text-slate-900 text-sm">Ultrasound System US-04</h4>
+                      <p className="text-slate-500 font-medium text-[11px]">Location: ICU Mobile Diagnostics</p>
+                    </div>
+                    <Badge className="bg-amber-100 text-amber-800 border-amber-300 font-bold">CALIBRATION DUE</Badge>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-white border-slate-200/80 shadow-xs">
+                <CardHeader>
+                  <CardTitle className="text-base font-bold text-slate-900 flex items-center">
+                    <ShieldAlert className="w-5 h-5 mr-2 text-rose-600" /> Technician Quick Actions
+                  </CardTitle>
+                  <CardDescription className="text-xs">Report technical issues or request hardware support</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3 text-xs">
+                  <Button 
+                    className="w-full bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs h-10 justify-start"
+                    onClick={() => setIsIssueModalOpen(true)}
+                  >
+                    <AlertTriangle className="w-4 h-4 mr-2" /> Report Equipment Malfunction / Delay
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    className="w-full border-slate-300 text-slate-700 font-bold text-xs h-10 justify-start"
+                    onClick={() => showNotification("Diagnostic calibration check logged successfully.")}
+                  >
+                    <RefreshCw className="w-4 h-4 mr-2 text-teal-600" /> Log Daily Device Calibration
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
           )}
 
           {activeRole === 'DOCTOR' && (
