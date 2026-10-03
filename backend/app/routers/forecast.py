@@ -6,13 +6,21 @@ from pydantic import BaseModel
 from services.demand_forecaster import (
     predict_demand,
     DemandForecasterError,
-    ModelLoadError,
-    FeatureValidationError,
-    PredictionError,
+    ModelLoadError as DemandModelLoadError,
+    FeatureValidationError as DemandFeatureValidationError,
+    PredictionError as DemandPredictionError,
     demand_forecaster,
 )
+from services.workload_forecaster import (
+    predict_staff_workload,
+    WorkloadForecasterError,
+    ModelLoadError as WorkloadModelLoadError,
+    FeatureValidationError as WorkloadFeatureValidationError,
+    PredictionError as WorkloadPredictionError,
+    workload_forecaster,
+)
 
-router = APIRouter(prefix="/api/forecast", tags=["Demand Forecasting ML"])
+router = APIRouter(prefix="/api/forecast", tags=["Operational Forecasting ML"])
 
 
 class DemandPredictions(BaseModel):
@@ -55,17 +63,17 @@ def forecast_demand(payload: Dict[str, Any]):
     try:
         result = predict_demand(payload)
         return result
-    except FeatureValidationError as exc:
+    except DemandFeatureValidationError as exc:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail=str(exc),
         ) from exc
-    except ModelLoadError as exc:
+    except DemandModelLoadError as exc:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail=str(exc),
         ) from exc
-    except PredictionError as exc:
+    except DemandPredictionError as exc:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=str(exc),
@@ -78,5 +86,51 @@ def forecast_demand(payload: Dict[str, Any]):
     except Exception as exc:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Unexpected forecasting failure: {str(exc)}",
+            detail=f"Unexpected demand forecasting failure: {str(exc)}",
         ) from exc
+
+class WorkloadForecastResponse(BaseModel):
+    forecast_horizon: str
+    model: str
+    version: str
+    predicted_staff_workload: float
+    workload_percentage: int
+    workload_level: str
+
+
+@router.post("/workload", response_model=WorkloadForecastResponse)
+def forecast_workload(payload: Dict[str, Any]):
+    """Forecasts hospital staff workload 1 hour into the future based on 23 telemetry features.
+
+    Validates that all model features exist, clamps workload between 0.0 and 1.0,
+    computes workload percentage, and assigns operational workload level (LOW, MODERATE, HIGH, CRITICAL).
+    """
+    try:
+        result = predict_staff_workload(payload)
+        return result
+    except WorkloadFeatureValidationError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(exc),
+        ) from exc
+    except WorkloadModelLoadError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=str(exc),
+        ) from exc
+    except WorkloadPredictionError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(exc),
+        ) from exc
+    except WorkloadForecasterError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        ) from exc
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Unexpected workload forecasting failure: {str(exc)}",
+        ) from exc
+
