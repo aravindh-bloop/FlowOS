@@ -51,7 +51,15 @@ class WaitingTimePredictor:
         Predicts actual waiting time in minutes using the loaded GradientBoosting scikit-learn pipeline.
         """
         if self.pipeline is None:
-            raise RuntimeError("Waiting time prediction model is not loaded.")
+            queue_len = float(state.get("queue_length") or state.get("active_queue_count") or 4)
+            er_load = float(state.get("er_load") or 1.0)
+            triage_val = str(state.get("triage_priority") or state.get("priority") or "MEDIUM").upper()
+            triage_multiplier = 0.5 if "CRITICAL" in triage_val else 0.7 if "HIGH" in triage_val else 1.2
+            est_minutes = max(5.0, round(queue_len * 12.0 * triage_multiplier * er_load, 1))
+            return {
+                "predicted_waiting_time_minutes": est_minutes,
+                "model_version": f"{self.model_version}-fallback"
+            }
 
         # Create single-row DataFrame from input features
         input_df = pd.DataFrame([state])
