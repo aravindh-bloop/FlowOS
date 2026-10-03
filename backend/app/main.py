@@ -1,6 +1,24 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routers import auth, dashboard, patients, beds, staff, resources, events, alerts, predictions, bottlenecks, orchestration, emergencies, analytics, staff_portal, speech
+from app.routers import (
+    alerts,
+    analytics,
+    anomalies,
+    auth,
+    beds,
+    bottlenecks,
+    dashboard,
+    emergencies,
+    events,
+    intelligence,
+    orchestration,
+    patients,
+    predictions,
+    resources,
+    speech,
+    staff,
+    staff_portal,
+)
 
 app = FastAPI(title="FlowOS Backend")
 
@@ -27,6 +45,8 @@ app.include_router(emergencies.router)
 app.include_router(analytics.router)
 app.include_router(staff_portal.router)
 app.include_router(speech.router)
+app.include_router(intelligence.router)
+app.include_router(anomalies.router)
 
 @app.get("/api/health")
 def health_check():

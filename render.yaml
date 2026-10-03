@@ -1,0 +1,19 @@
+services:
+  # Python FastAPI Backend Service
+  - type: web
+    name: flowos-backend
+    env: python
+    buildCommand: "pip install -r backend/requirements.txt"
+    startCommand: "uvicorn app.main:app --host 0.0.0.0 --port $PORT"
+    rootDir: backend
+    envVars:
+      - key: DATABASE_URL
+        value: postgresql://neondb_owner:npg_GabDFrtO9B2I@ep-mute-feather-b34hld16-pooler.c-4.ap-southeast-1.aws.neon.tech/neondb?sslmode=require
+      - key: SECRET_KEY
+        value: flowos-hackathon-secret-key-2024-xK9mP2nQ
+      - key: ALGORITHM
+        value: HS256
+      - key: ACCESS_TOKEN_EXPIRE_MINUTES
+        value: "480"
+      - key: PYTHON_VERSION
+        value: "3.12.0"
