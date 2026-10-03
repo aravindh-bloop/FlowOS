@@ -79,4 +79,16 @@ export const respondToEmergency = (id: number | string): Promise<any> => api.pos
 export const getAnalytics = (): Promise<Analytics> => api.get('/analytics').then((res) => res.data);
 export const getDepartmentAnalytics = (id: number | string): Promise<DepartmentAnalytics> => api.get(`/analytics/department/${id}`).then((res) => res.data);
 
+// Staff Portal Endpoints (Portal 2)
+export const getStaffProfile = (): Promise<any> => api.get('/staff-portal/me').then((res) => res.data);
+export const getMyPatients = (role?: string, department_id?: number): Promise<any[]> => api.get('/staff-portal/my-patients', { params: { role, department_id } }).then((res) => res.data);
+export const getPatientAiSummary = (patient_id: number | string): Promise<any> => api.get(`/staff-portal/patient-summary/${patient_id}`).then((res) => res.data);
+export const getStaffTasks = (role?: string): Promise<any[]> => api.get('/staff-portal/tasks', { params: { role } }).then((res) => res.data);
+export const updateTaskStatus = (task_id: number, status: string): Promise<any> => api.post(`/staff-portal/tasks/${task_id}/status`, { status }).then((res) => res.data);
+export const reportStaffIssue = (payload: { patient_id?: number; issue_type: string; message: string }): Promise<any> => api.post('/staff-portal/report-issue', payload).then((res) => res.data);
+export const getDiagnosticsQueue = (): Promise<any[]> => api.get('/staff-portal/diagnostics/queue').then((res) => res.data);
+export const updateDiagnosticStatus = (queue_id: number, status: string): Promise<any> => api.post(`/staff-portal/diagnostics/${queue_id}/status`, { status }).then((res) => res.data);
+export const recordPatientMovement = (patient_id: number, from_location: string, to_location: string): Promise<any> => api.post(`/staff-portal/patients/${patient_id}/movement`, { from_location, to_location }).then((res) => res.data);
+export const recordPatientObservation = (patient_id: number, category: string, value: string, notes?: string): Promise<any> => api.post(`/staff-portal/patients/${patient_id}/observations`, { category, value, notes }).then((res) => res.data);
+
 export default api;

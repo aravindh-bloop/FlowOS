@@ -14,14 +14,15 @@ import {
   Brain, 
   Siren, 
   BarChart3,
+  Stethoscope,
   LogOut
 } from 'lucide-react';
 
-const NAV_ITEMS = [
+const OPERATIONS_NAV = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Patients', href: '/patients', icon: Users },
   { name: 'Beds', href: '/beds', icon: BedDouble },
-  { name: 'Staff', href: '/staff', icon: UserCog },
+  { name: 'Staff Roster', href: '/staff', icon: UserCog },
   { name: 'Resources', href: '/resources', icon: Cpu },
   { name: 'Intelligence', href: '/intelligence', icon: Brain },
   { name: 'Emergencies', href: '/emergencies', icon: Siren },
@@ -31,6 +32,7 @@ const NAV_ITEMS = [
 export function Sidebar() {
   const pathname = usePathname();
   const { user, logout } = useAuth();
+  const isStaffPortal = pathname.startsWith('/staff-portal');
 
   return (
     <div className="fixed top-0 left-0 h-screen w-64 bg-white border-r border-slate-200/80 flex flex-col z-20 shadow-xs">
@@ -41,29 +43,47 @@ export function Sidebar() {
         </div>
         <div className="flex flex-col">
           <span className="text-lg font-bold text-slate-900 tracking-tight leading-none">FlowOS</span>
-          <span className="text-[10px] font-medium text-teal-600 tracking-wider uppercase mt-0.5">Clinical Suite</span>
+          <span className="text-[10px] font-bold text-teal-600 tracking-wider uppercase mt-0.5">Hospital Platform</span>
         </div>
       </div>
 
       {/* Nav */}
       <nav className="flex-1 overflow-y-auto py-4">
+        {/* Portal 2 Highlight Item */}
+        <div className="px-3 mb-4">
+          <Link
+            href="/staff-portal"
+            className={`flex items-center px-3.5 py-3 rounded-xl transition-all border ${
+              isStaffPortal
+                ? 'bg-teal-600 text-white font-bold border-teal-600 shadow-md'
+                : 'bg-teal-50/70 text-teal-800 font-bold border-teal-200 hover:bg-teal-100/80'
+            }`}
+          >
+            <Stethoscope className={`h-5 w-5 mr-3 ${isStaffPortal ? 'text-white' : 'text-teal-600'}`} />
+            <div className="flex flex-col">
+              <span className="text-sm leading-tight">Staff Portal</span>
+              <span className={`text-[10px] font-semibold ${isStaffPortal ? 'text-teal-100' : 'text-teal-600'}`}>Doctors • Nurses • Techs</span>
+            </div>
+          </Link>
+        </div>
+
         <div className="px-4 mb-2">
-          <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Clinical Operations</span>
+          <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Operations Command Center</span>
         </div>
         <ul className="space-y-1 px-3">
-          {NAV_ITEMS.map((item) => {
-            const isActive = pathname.startsWith(item.href);
+          {OPERATIONS_NAV.map((item) => {
+            const isActive = !isStaffPortal && pathname.startsWith(item.href);
             return (
               <li key={item.name}>
                 <Link
                   href={item.href}
-                  className={`flex items-center px-3 py-2.5 rounded-lg transition-all ${
+                  className={`flex items-center px-3 py-2 rounded-lg transition-all ${
                     isActive
                       ? 'bg-teal-50 text-teal-700 font-semibold border-r-4 border-teal-600 shadow-2xs'
                       : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/80'
                   }`}
                 >
-                  <item.icon className={`h-5 w-5 mr-3 ${isActive ? 'text-teal-600' : 'text-slate-400'}`} />
+                  <item.icon className={`h-4.5 w-4.5 mr-3 ${isActive ? 'text-teal-600' : 'text-slate-400'}`} />
                   <span className="text-sm">{item.name}</span>
                 </Link>
               </li>
