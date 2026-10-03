@@ -96,4 +96,8 @@ export const recordPatientObservation = (patient_id: number, category: string, v
 export const runAnomalyDetection = (hospitalState: any): Promise<any> => api.post('/intelligence/anomaly-detection', hospitalState).then((res) => res.data);
 export const getLiveAnomalies = (): Promise<any> => api.get('/anomalies/live').then((res) => res.data);
 
+// Outpatient Intake & Smart Doctor Allocation
+export const registerPatientIntake = (payload: any): Promise<any> => api.post('/patients/intake', payload).then((res) => res.data);
+export const getAvailableDoctors = (department_id?: number): Promise<any[]> => api.get('/patients/available-doctors', { params: { department_id } }).then((res) => res.data);
+
 export default api;

@@ -61,12 +61,14 @@ def get_or_create_staff_profile(db: Session, user: User) -> Dict[str, Any]:
     }
 
 def get_staff_assigned_patients(db: Session, staff_role: str, department_id: int) -> List[Dict[str, Any]]:
-    # Query admissions for staff department or active admissions
-    query = db.query(Admission).filter(Admission.status == AdmissionStatus.ADMITTED)
+    # Query admissions for staff department or active admissions (both inpatients and outpatients)
+    query = db.query(Admission).filter(
+        Admission.status.in_([AdmissionStatus.ADMITTED, AdmissionStatus.IN_TREATMENT])
+    )
     if department_id and staff_role in ["NURSE", "TECHNICIAN"]:
         query = query.filter(Admission.department_id == department_id)
         
-    admissions = query.limit(20).all()
+    admissions = query.order_by(Admission.admission_date.desc()).limit(25).all()
     results = []
     
     for adm in admissions:
@@ -75,6 +77,9 @@ def get_staff_assigned_patients(db: Session, staff_role: str, department_id: int
         bed = db.query(Bed).filter(Bed.id == adm.bed_id).first() if adm.bed_id else None
         
         if patient:
+            location_str = f"{dept.name if dept else 'Dept'} - Bed {bed.bed_number}" if bed else (
+                f"{dept.name if dept else 'Clinic'} OPD (Outpatient)"
+            )
             results.append({
                 "patient_id": patient.id,
                 "mrn": patient.mrn,
@@ -83,12 +88,13 @@ def get_staff_assigned_patients(db: Session, staff_role: str, department_id: int
                 "gender": patient.gender.value if hasattr(patient.gender, "value") else str(patient.gender),
                 "blood_type": patient.blood_type or "O+",
                 "department": dept.name if dept else "General",
-                "location": f"{dept.name if dept else 'Dept'} - Bed {bed.bed_number if bed else 'Unassigned'}",
+                "location": location_str,
                 "priority": adm.priority.value if hasattr(adm.priority, "value") else str(adm.priority),
                 "diagnosis": adm.diagnosis or "Observation",
                 "admission_date": adm.admission_date.strftime("%Y-%m-%d %H:%M") if adm.admission_date else "Today",
                 "status": adm.status.value if hasattr(adm.status, "value") else str(adm.status),
-                "next_action": "CT Scan Scheduled" if adm.priority == PriorityLevel.CRITICAL else "Routine Vitals & Rounds"
+                "admission_type": adm.admission_type.value if hasattr(adm.admission_type, "value") else str(adm.admission_type),
+                "next_action": "Doctor Consultation & Clinical Checkup" if adm.admission_type == AdmissionType.WALK_IN else ("CT Scan Scheduled" if adm.priority == PriorityLevel.CRITICAL else "Routine Vitals & Rounds")
             })
     return results
 
@@ -97,7 +103,10 @@ def generate_patient_ai_summary(db: Session, patient_id: int) -> Dict[str, Any]:
     if not patient:
         return {"error": "Patient not found"}
         
-    admission = db.query(Admission).filter(Admission.patient_id == patient_id, Admission.status == AdmissionStatus.ADMITTED).first()
+    admission = db.query(Admission).filter(
+        Admission.patient_id == patient_id, 
+        Admission.status.in_([AdmissionStatus.ADMITTED, AdmissionStatus.IN_TREATMENT])
+    ).first()
     events = db.query(HospitalEvent).filter(HospitalEvent.patient_id == patient_id).order_by(HospitalEvent.timestamp.desc()).limit(5).all()
     dept = db.query(Department).filter(Department.id == admission.department_id).first() if admission else None
     bed = db.query(Bed).filter(Bed.id == admission.bed_id).first() if (admission and admission.bed_id) else None
