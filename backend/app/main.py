@@ -7,6 +7,7 @@ from app.routers import (
     auth,
     beds,
     bottlenecks,
+    caretaker,
     dashboard,
     emergencies,
     events,
@@ -44,6 +45,8 @@ app.include_router(orchestration.router)
 app.include_router(emergencies.router)
 app.include_router(analytics.router)
 app.include_router(staff_portal.router)
+app.include_router(caretaker.router)
+app.include_router(caretaker.compat_router)
 app.include_router(speech.router)
 app.include_router(intelligence.router)
 app.include_router(anomalies.router)

@@ -26,8 +26,11 @@ class AdmissionResponse(BaseModel):
     id: int
     patient_id: int
     department_id: int
+    department_name: Optional[str] = None
     bed_id: Optional[int] = None
+    bed_number: Optional[str] = None
     attending_doctor_id: Optional[int] = None
+    attending_doctor_name: Optional[str] = None
     admission_date: datetime
     discharge_date: Optional[datetime] = None
     status: AdmissionStatus
@@ -38,8 +41,12 @@ class AdmissionResponse(BaseModel):
     created_at: datetime
     model_config = {"from_attributes": True}
 
+from app.schemas.event import HospitalEventResponse
+
 class PatientDetail(PatientResponse):
     admissions: List[AdmissionResponse] = []
+    events: List[HospitalEventResponse] = []
+    current_admission: Optional[AdmissionResponse] = None
     model_config = {"from_attributes": True}
 
 class PatientTransferResponse(BaseModel):

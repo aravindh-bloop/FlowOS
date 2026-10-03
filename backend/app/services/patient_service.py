@@ -14,5 +14,30 @@ def get_patients(db: Session, department_id: int = None, status: str = None, sea
             query = query.filter(Admission.status == status)
     return query.all()
 
+from app.models.event import HospitalEvent
+
 def get_patient_detail(db: Session, patient_id: int):
-    return db.query(Patient).filter(Patient.id == patient_id).first()
+    patient = db.query(Patient).filter(Patient.id == patient_id).first()
+    if not patient:
+        return None
+
+    # Enrich admissions with department, bed, and doctor names
+    for adm in patient.admissions:
+        if adm.department:
+            setattr(adm, "department_name", adm.department.name)
+        if adm.bed:
+            setattr(adm, "bed_number", adm.bed.bed_number)
+        if adm.attending_doctor:
+            setattr(adm, "attending_doctor_name", f"Dr. {adm.attending_doctor.first_name} {adm.attending_doctor.last_name}")
+
+    # Fetch events for this patient
+    events = (
+        db.query(HospitalEvent)
+        .filter(HospitalEvent.patient_id == patient_id)
+        .order_by(HospitalEvent.timestamp.desc())
+        .all()
+    )
+    setattr(patient, "events", events)
+    setattr(patient, "current_admission", patient.admissions[0] if patient.admissions else None)
+
+    return patient

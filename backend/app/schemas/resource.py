@@ -17,7 +17,7 @@ class EquipmentResponse(BaseModel):
     current_patient_id: Optional[int] = None
     is_active: bool
     created_at: datetime
-    model_config = {"from_attributes": True}
+    model_config = {"from_attributes": True, "protected_namespaces": ()}
 
 class OperatingTheatreResponse(BaseModel):
     id: int

@@ -55,6 +55,16 @@ def register_outpatient_intake(
             detail=f"Failed to process patient intake: {str(e)}"
         )
 
+from app.schemas.patient_timeline import (
+    UnifiedTimelineResponse,
+    UnifiedTimelineItem,
+    PostTimelineUpdateRequest,
+)
+from app.services.patient_timeline_service import (
+    get_unified_patient_timeline,
+    add_patient_timeline_update,
+)
+
 @router.get("/{id}", response_model=PatientDetail)
 def read_patient(
     id: int, 
@@ -65,3 +75,39 @@ def read_patient(
     if not patient:
         raise HTTPException(status_code=404, detail="Patient not found")
     return patient
+
+@router.get("/{id}/timeline", response_model=UnifiedTimelineResponse)
+def read_patient_timeline(
+    id: int,
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user),
+):
+    """
+    Returns the unified multidisciplinary timeline for a patient, transparently
+    combining hospital admissions, surgical procedures, nursing checks/vitals,
+    and caretaker logs into a single chronological stream.
+    """
+    timeline = get_unified_patient_timeline(db, id)
+    if not timeline:
+        raise HTTPException(status_code=404, detail="Patient not found")
+    return timeline
+
+@router.post("/{id}/timeline", response_model=UnifiedTimelineItem, status_code=status.HTTP_201_CREATED)
+def post_patient_timeline_update(
+    id: int,
+    req: PostTimelineUpdateRequest,
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user),
+):
+    """
+    Posts a multidisciplinary care team update (Doctor note/order, Nurse vitals/check,
+    or Caretaker bedside log) to the patient's unified timeline.
+    """
+    try:
+        user_name = getattr(current_user, "full_name", None) or getattr(current_user, "email", None)
+        item = add_patient_timeline_update(db, id, req, current_user_name=user_name)
+        return item
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Failed to post timeline update: {str(e)}")
+

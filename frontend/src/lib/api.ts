@@ -100,4 +100,8 @@ export const getLiveAnomalies = (): Promise<any> => api.get('/anomalies/live').t
 export const registerPatientIntake = (payload: any): Promise<any> => api.post('/patients/intake', payload).then((res) => res.data);
 export const getAvailableDoctors = (department_id?: number): Promise<any[]> => api.get('/patients/available-doctors', { params: { department_id } }).then((res) => res.data);
 
+// Unified Multidisciplinary Patient Timeline
+export const getPatientTimeline = (patient_id: number | string): Promise<any> => api.get(`/patients/${patient_id}/timeline`).then((res) => res.data);
+export const postPatientTimelineUpdate = (patient_id: number | string, data: any): Promise<any> => api.post(`/patients/${patient_id}/timeline`, data).then((res) => res.data);
+
 export default api;

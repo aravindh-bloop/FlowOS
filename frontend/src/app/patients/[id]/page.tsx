@@ -19,20 +19,21 @@ export default function PatientDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const fetchPatientData = async (silent = false) => {
     if (!id) return;
-    const fetchPatientData = async () => {
-      try {
-        setLoading(true);
-        const data = await getPatient(id);
-        setPatient(data);
-        setError(null);
-      } catch (err: any) {
-        setError(err.message || 'Failed to fetch patient details');
-      } finally {
-        setLoading(false);
-      }
-    };
+    try {
+      if (!silent) setLoading(true);
+      const data = await getPatient(id);
+      setPatient(data);
+      setError(null);
+    } catch (err: any) {
+      setError(err.message || 'Failed to fetch patient details');
+    } finally {
+      if (!silent) setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchPatientData();
   }, [id]);
 
@@ -149,7 +150,11 @@ export default function PatientDetailPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <PatientJourney events={patient.events || []} />
+              <PatientJourney
+                events={patient.events || []}
+                patientId={patient.id}
+                onRefresh={() => fetchPatientData(true)}
+              />
             </CardContent>
           </Card>
         </div>
