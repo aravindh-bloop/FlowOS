@@ -119,4 +119,17 @@ export const postPatientTimelineUpdate = (patient_id: number | string, data: any
 // ML Waiting Time Prediction Endpoint
 export const predictWaitingTime = (hospitalState: any): Promise<any> => api.post('/intelligence/waiting-time', hospitalState).then((res) => res.data);
 
+// ML Operational Forecasting Endpoints (Bottleneck, Demand, Workload)
+export const predictBottleneck = (state: any): Promise<any> => api.post('/forecast/bottleneck', state).then((res) => res.data);
+export const predictDemand = (state: any): Promise<any> => api.post('/forecast/demand', state).then((res) => res.data);
+export const predictWorkload = (state: any): Promise<any> => api.post('/forecast/workload', state).then((res) => res.data);
+
+// Operational Decision & Optimization Engines
+export const optimizeStaffAssignment = (payload: any): Promise<any> => api.post('/optimization/staff-assignment', payload).then((res) => res.data);
+export const optimizeResourceAllocation = (payload: any): Promise<any> => api.post('/optimization/resource-allocation', payload).then((res) => res.data);
+export const prioritizeTasks = (payload: any): Promise<any> => api.post('/optimization/task-priority', payload).then((res) => res.data);
+export const routeAlert = (payload: any): Promise<any> => api.post('/optimization/alert-routing', payload).then((res) => res.data);
+export const getRbacRoutingMatrix = (): Promise<any> => api.get('/optimization/alert-routing/rbac-matrix').then((res) => res.data);
+
 export default api;
+
