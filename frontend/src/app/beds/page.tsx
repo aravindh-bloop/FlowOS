@@ -278,7 +278,7 @@ export default function BedsPage() {
         </div>
         <div className="text-center">
           <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Occupied</p>
-          <p className="text-2xl font-bold text-teal-600">{summary.occupied}</p>
+          <p className="text-2xl font-bold text-rose-600">{summary.occupied}</p>
         </div>
         <div className="text-center">
           <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Reserved</p>
@@ -290,7 +290,7 @@ export default function BedsPage() {
         </div>
         <div className="text-center">
           <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Unavailable</p>
-          <p className="text-2xl font-bold text-rose-600">{summary.unavailable}</p>
+          <p className="text-2xl font-bold text-zinc-600">{summary.unavailable}</p>
         </div>
       </div>
 

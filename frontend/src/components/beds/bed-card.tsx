@@ -6,10 +6,10 @@ export function BedCard({ bed, onSelect }: { bed: Bed; onSelect?: (bed: Bed) => 
   const getStatusStyles = (status: string) => {
     switch (status) {
       case 'AVAILABLE': return 'bg-emerald-50 border-emerald-300 text-emerald-900 hover:bg-emerald-100/90 shadow-2xs hover:border-emerald-400';
-      case 'OCCUPIED': return 'bg-teal-50 border-teal-300 text-teal-900 hover:bg-teal-100/90 shadow-2xs hover:border-teal-400';
+      case 'OCCUPIED': return 'bg-rose-50 border-rose-300 text-rose-900 hover:bg-rose-100/90 shadow-2xs hover:border-rose-400';
       case 'RESERVED': return 'bg-amber-50 border-amber-300 text-amber-900 hover:bg-amber-100/90 shadow-2xs hover:border-amber-400';
       case 'MAINTENANCE': return 'bg-slate-100 border-slate-300 text-slate-700 hover:bg-slate-200/90';
-      case 'UNAVAILABLE': return 'bg-rose-50 border-rose-300 text-rose-900 hover:bg-rose-100/90 shadow-2xs hover:border-rose-400';
+      case 'UNAVAILABLE': return 'bg-zinc-100 border-zinc-300 text-zinc-600 hover:bg-zinc-200/90 shadow-2xs hover:border-zinc-400';
       default: return 'bg-slate-100 border-slate-300 text-slate-700';
     }
   };
@@ -17,10 +17,10 @@ export function BedCard({ bed, onSelect }: { bed: Bed; onSelect?: (bed: Bed) => 
   const getBadgeStyle = (status: string) => {
     switch (status) {
       case 'AVAILABLE': return 'bg-emerald-100 text-emerald-800 border-emerald-300';
-      case 'OCCUPIED': return 'bg-teal-100 text-teal-800 border-teal-300';
+      case 'OCCUPIED': return 'bg-rose-100 text-rose-800 border-rose-300';
       case 'RESERVED': return 'bg-amber-100 text-amber-800 border-amber-300';
       case 'MAINTENANCE': return 'bg-slate-200 text-slate-700 border-slate-300';
-      case 'UNAVAILABLE': return 'bg-rose-100 text-rose-800 border-rose-300';
+      case 'UNAVAILABLE': return 'bg-zinc-200 text-zinc-700 border-zinc-300';
       default: return 'bg-slate-200 text-slate-700 border-slate-300';
     }
   };
