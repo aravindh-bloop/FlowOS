@@ -61,6 +61,7 @@ export default function BedsPage() {
       setPatients(patientsData);
       setError(null);
     } catch (err: any) {
+      console.warn('[FlowOS Beds] Poll error:', err.message || err);
       if (!silent) setError(err.message || 'Failed to fetch bed data');
     } finally {
       if (!silent) setLoading(false);
@@ -69,10 +70,10 @@ export default function BedsPage() {
 
   useEffect(() => {
     fetchData();
-    // Live polling: updates automatically every 4 seconds when RFID reader triggers
+    // Live polling: updates automatically every 1.5 seconds when RFID reader triggers
     const interval = setInterval(() => {
       fetchData(true);
-    }, 4000);
+    }, 1500);
     return () => clearInterval(interval);
   }, []);
 

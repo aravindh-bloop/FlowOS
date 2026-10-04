@@ -20,14 +20,34 @@ import {
 } from '../types';
 import { getToken, removeToken } from './auth';
 
-const rawApiUrl = (process.env.NEXT_PUBLIC_API_URL || 'https://flowos-a6te.onrender.com/api').replace(/\/+$/, '');
-const API_URL = rawApiUrl.endsWith('/api') ? rawApiUrl : `${rawApiUrl}/api`;
+export function getBaseApiUrl(): string {
+  const envUrl = process.env.NEXT_PUBLIC_API_URL;
+  if (typeof window !== 'undefined') {
+    const host = window.location.hostname;
+    if (
+      host === 'localhost' ||
+      host === '127.0.0.1' ||
+      host.startsWith('172.') ||
+      host.startsWith('192.') ||
+      host.startsWith('10.')
+    ) {
+      return `http://${host}:8000/api`;
+    }
+  }
+  const raw = (envUrl || 'http://localhost:8000/api').replace(/\/+$/, '');
+  return raw.endsWith('/api') ? raw : `${raw}/api`;
+}
+
+export const API_URL = getBaseApiUrl();
 
 const api = axios.create({
   baseURL: API_URL,
 });
 
 api.interceptors.request.use((config) => {
+  if (typeof window !== 'undefined') {
+    config.baseURL = getBaseApiUrl();
+  }
   const token = getToken();
   if (token && config.headers) {
     config.headers.Authorization = `Bearer ${token}`;
@@ -52,7 +72,10 @@ export const login = (data: LoginRequest): Promise<TokenResponse> => api.post('/
 export const getDashboard = (): Promise<DashboardOverview> => api.get('/dashboard/overview').then((res) => res.data);
 export const getPatients = (params?: any): Promise<Patient[]> => api.get('/patients', { params }).then((res) => res.data);
 export const getPatient = (id: number | string): Promise<PatientDetail> => api.get(`/patients/${id}`).then((res) => res.data);
-export const getBeds = (params?: any): Promise<Bed[]> => api.get('/beds', { params }).then((res) => res.data);
+export const getBeds = (params?: any): Promise<Bed[]> =>
+  api.get('/beds', {
+    params: { ...params, _t: Date.now() },
+  }).then((res) => res.data);
 export const getBedSummary = (): Promise<any> => api.get('/beds/summary').then((res) => res.data);
 export const assignBed = (bedId: number | string, data: { patient_id: number; notes?: string }): Promise<Bed> => api.post(`/beds/${bedId}/assign`, data).then((res) => res.data);
 export const releaseBed = (bedId: number | string): Promise<Bed> => api.post(`/beds/${bedId}/release`, {}).then((res) => res.data);

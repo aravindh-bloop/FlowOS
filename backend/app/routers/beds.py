@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Response
 from sqlalchemy.orm import Session
 from typing import List, Optional
 
@@ -26,10 +26,14 @@ router = APIRouter(prefix="/api/beds", tags=["beds"])
 
 @router.get("", response_model=List[BedResponse])
 def read_beds(
+    response: Response,
     department_id: Optional[int] = None,
     db: Session = Depends(get_db),
-    current_user = Depends(get_current_user)
+    current_user = Depends(get_optional_current_user)
 ):
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
     beds = get_beds(db)
     if department_id:
         beds = [b for b in beds if b.department_id == department_id]
@@ -37,10 +41,12 @@ def read_beds(
 
 @router.get("/summary", response_model=BedSummary)
 def read_bed_summary(
+    response: Response,
     department_id: int,
     db: Session = Depends(get_db),
-    current_user = Depends(get_current_user)
+    current_user = Depends(get_optional_current_user)
 ):
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
     return get_bed_summary_by_department(db, department_id)
 
 @router.post("/assign-mock-patient", response_model=BedResponse)
