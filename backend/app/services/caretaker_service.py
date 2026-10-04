@@ -69,9 +69,16 @@ def get_caretaker_patient_overview(db: Session, patient_id: Optional[int] = None
 
     if patient and patient.admissions:
         latest_adm = sorted(patient.admissions, key=lambda a: a.admission_date, reverse=True)[0]
-        dept_name = latest_adm.department.name if latest_adm.department else "General Ward"
-        bed_num = latest_adm.bed.bed_number if latest_adm.bed else "304B"
-        room = f"{dept_name} • Bed {bed_num}"
+        dept_name = latest_adm.department.name if latest_adm.department else "General Medicine"
+        if latest_adm.bed:
+            if latest_adm.bed.room:
+                r_num = str(latest_adm.bed.room.room_number).strip()
+                room_label = r_num if r_num.lower().startswith("room") else f"Room {r_num}"
+            else:
+                room_label = dept_name
+            room = f"{room_label} • Bed {latest_adm.bed.bed_number}"
+        else:
+            room = f"{dept_name} • Bed 304B"
         condition = latest_adm.diagnosis or "Inpatient Care"
         day_of_stay = max(1, (datetime.now().date() - latest_adm.admission_date.date()).days + 1)
         status = latest_adm.status.value if hasattr(latest_adm.status, 'value') else str(latest_adm.status)

@@ -16,6 +16,7 @@ from app.routers import (
     patients,
     predictions,
     resources,
+    rfid,
     speech,
     staff,
     staff_portal,
@@ -48,6 +49,7 @@ app.include_router(staff_portal.router)
 app.include_router(caretaker.router)
 app.include_router(caretaker.compat_router)
 app.include_router(speech.router)
+app.include_router(rfid.router)
 app.include_router(intelligence.router)
 app.include_router(anomalies.router)
 

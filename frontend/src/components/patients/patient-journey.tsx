@@ -187,14 +187,17 @@ export function PatientJourney({
         </div>
 
         {patientId && (
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button size="sm" className="h-8 gap-1.5 bg-teal-600 hover:bg-teal-700 text-white font-medium text-xs">
-                <Plus className="w-3.5 h-3.5" />
-                Post Update
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
+          <div>
+            <Button
+              size="sm"
+              onClick={() => setIsDialogOpen(true)}
+              className="h-8 gap-1.5 bg-teal-600 hover:bg-teal-700 text-white font-medium text-xs"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              Post Update
+            </Button>
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <DialogContent className="sm:max-w-[425px]">
               <DialogHeader>
                 <DialogTitle className="text-base font-bold text-slate-900">
                   Post Care Team Update
@@ -298,7 +301,8 @@ export function PatientJourney({
               </div>
             </DialogContent>
           </Dialog>
-        )}
+        </div>
+      )}
       </div>
 
       {/* Role Filter Tabs */}

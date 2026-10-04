@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from typing import Optional, List
 
 from app.database import get_db
-from app.dependencies import get_current_user
+from app.dependencies import get_current_user, get_optional_current_user
 from app.schemas.caretaker import (
     PatientOverview,
     CareNotesResponse,
@@ -36,7 +36,7 @@ base_router = APIRouter()
 @base_router.get("/overview", response_model=PatientOverview)
 def read_current_patient_overview(
     db: Session = Depends(get_db),
-    current_user = Depends(get_current_user),
+    current_user = Depends(get_optional_current_user),
 ):
     """
     Returns the comprehensive patient overview for the caretaker home screen,

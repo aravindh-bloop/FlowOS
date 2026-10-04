@@ -54,6 +54,18 @@ export const getPatients = (params?: any): Promise<Patient[]> => api.get('/patie
 export const getPatient = (id: number | string): Promise<PatientDetail> => api.get(`/patients/${id}`).then((res) => res.data);
 export const getBeds = (params?: any): Promise<Bed[]> => api.get('/beds', { params }).then((res) => res.data);
 export const getBedSummary = (): Promise<any> => api.get('/beds/summary').then((res) => res.data);
+export const assignBed = (bedId: number | string, data: { patient_id: number; notes?: string }): Promise<Bed> => api.post(`/beds/${bedId}/assign`, data).then((res) => res.data);
+export const releaseBed = (bedId: number | string): Promise<Bed> => api.post(`/beds/${bedId}/release`, {}).then((res) => res.data);
+export const transferBed = (bedId: number | string, data: { to_bed_id: number; reason?: string }): Promise<Bed> => api.post(`/beds/${bedId}/transfer`, data).then((res) => res.data);
+export const assignMockPatientBed = (): Promise<Bed> => api.post('/beds/assign-mock-patient', {}).then((res) => res.data);
+export const scanRfidBed = (data: {
+  user_id?: number | string;
+  bed_id: number | string;
+  action?: string;
+  status?: string;
+  reader_id?: string;
+  notes?: string;
+}): Promise<any> => api.post('/rfid/scan', data).then((res) => res.data);
 export const getStaff = (params?: any): Promise<Staff[]> => api.get('/staff', { params }).then((res) => res.data);
 export const getStaffDetail = (id: number | string): Promise<Staff> => api.get(`/staff/${id}`).then((res) => res.data);
 export const getResources = (): Promise<Equipment[]> => api.get('/resources').then((res) => res.data);

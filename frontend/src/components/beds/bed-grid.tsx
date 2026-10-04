@@ -2,7 +2,13 @@ import { Bed } from '@/types';
 import { BedCard } from '@/components/beds/bed-card';
 import { Separator } from '@/components/ui/separator';
 
-export function BedGrid({ groupedBeds }: { groupedBeds: Record<string, Bed[]> }) {
+export function BedGrid({
+  groupedBeds,
+  onSelectBed,
+}: {
+  groupedBeds: Record<string, Bed[]>;
+  onSelectBed?: (bed: Bed) => void;
+}) {
   return (
     <div className="space-y-6">
       {Object.entries(groupedBeds).map(([department, beds]) => (
@@ -14,7 +20,7 @@ export function BedGrid({ groupedBeds }: { groupedBeds: Record<string, Bed[]> })
           <Separator className="bg-slate-200 mb-6" />
           <div className="flex flex-wrap gap-4">
             {beds.map(bed => (
-              <BedCard key={bed.id} bed={bed} />
+              <BedCard key={bed.id} bed={bed} onSelect={onSelectBed} />
             ))}
           </div>
         </div>

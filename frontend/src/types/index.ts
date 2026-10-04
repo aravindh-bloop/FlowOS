@@ -15,7 +15,7 @@ export type ActionStatus = 'PENDING' | 'EXECUTING' | 'COMPLETED' | 'FAILED' | 'C
 
 export interface User { id: number; email: string; full_name: string; role: UserRole; is_active: boolean; }
 export interface Department { id: number; name: string; code: string; type: string; floor: number; description: string; is_active: boolean; }
-export interface Bed { id: number; bed_number: string; room_id: number; ward_id: number; department_id: number; bed_type: BedType; status: BedStatus; patient_id: number | null; department_name?: string; ward_name?: string; room_number?: string; patient_name?: string; }
+export interface Bed { id: number; bed_number: string; room_id: number; ward_id: number; department_id: number; bed_type: BedType; status: BedStatus; patient_id: number | null; department_name?: string; ward_name?: string; room_number?: string; patient_name?: string; patient_mrn?: string; admission_id?: number; }
 export interface Patient { id: number; mrn: string; first_name: string; last_name: string; date_of_birth: string; gender: string; blood_type: string; contact_phone: string; }
 export interface Admission { id: number; patient_id: number; department_id: number; bed_id: number | null; admission_date: string; discharge_date: string | null; status: AdmissionStatus; admission_type: string; priority: Priority; diagnosis: string; department_name?: string; attending_doctor_name?: string; bed_number?: string; patient_name?: string; }
 export interface PatientDetail extends Patient { admissions: Admission[]; events: HospitalEvent[]; current_admission?: Admission; current_location?: string; }

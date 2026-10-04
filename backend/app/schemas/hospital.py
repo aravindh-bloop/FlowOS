@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List, Optional, Union
 from datetime import datetime
 from app.models.hospital import DepartmentType, RoomType, BedType, BedStatus
 
@@ -43,9 +43,23 @@ class BedResponse(BaseModel):
     bed_type: BedType
     status: BedStatus
     patient_id: Optional[int] = None
+    patient_name: Optional[str] = None
+    patient_mrn: Optional[str] = None
+    department_name: Optional[str] = None
+    room_number: Optional[str] = None
+    admission_id: Optional[int] = None
     is_active: bool
     updated_at: Optional[datetime] = None
     model_config = {"from_attributes": True}
+
+class AssignBedRequest(BaseModel):
+    patient_id: int
+    admission_id: Optional[int] = None
+    notes: Optional[str] = None
+
+class TransferBedRequest(BaseModel):
+    to_bed_id: int
+    reason: Optional[str] = None
 
 class BedSummary(BaseModel):
     total_beds: int
@@ -55,3 +69,18 @@ class BedSummary(BaseModel):
     maintenance_beds: int
     utilization_rate: float
     model_config = {"from_attributes": True}
+
+class RfidBedScanRequest(BaseModel):
+    user_id: Optional[Union[int, str]] = None
+    bed_id: Union[int, str]
+    action: Optional[str] = None  # "assign", "release", "toggle", "checkin", "checkout"
+    status: Optional[str] = None  # "OCCUPIED", "AVAILABLE", etc.
+    reader_id: Optional[str] = None
+    notes: Optional[str] = None
+
+class RfidBedScanResponse(BaseModel):
+    success: bool = True
+    message: str
+    action: str  # "ASSIGNED", "RELEASED", "UPDATED"
+    bed: BedResponse
+    patient: Optional[dict] = None
