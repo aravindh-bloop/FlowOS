@@ -1,5 +1,9 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
+from sqlalchemy import func
+import time
+from typing import Dict, Any
+
 from app.database import get_db
 from app.schemas.dashboard import DashboardOverview
 from app.dependencies import get_current_user
@@ -11,8 +15,16 @@ from app.models.resource import Equipment, EquipmentStatus, OperatingTheatre, Th
 
 router = APIRouter(prefix="/api/dashboard", tags=["dashboard"])
 
+_overview_cache: Dict[str, Any] = {"data": None, "timestamp": 0.0}
+DASHBOARD_CACHE_TTL = 5.0
+
 @router.get("/overview", response_model=DashboardOverview)
 def get_dashboard_overview(db: Session = Depends(get_db), current_user = Depends(get_current_user)):
+    global _overview_cache
+    now = time.time()
+    if _overview_cache["data"] is not None and (now - _overview_cache["timestamp"]) < DASHBOARD_CACHE_TTL:
+        return _overview_cache["data"]
+
     total_patients = db.query(Patient).count()
     active_admissions = db.query(Admission).filter(Admission.status == AdmissionStatus.ADMITTED).count()
 
@@ -57,12 +69,18 @@ def get_dashboard_overview(db: Session = Depends(get_db), current_user = Depends
     # Active emergencies
     active_emergencies = db.query(Alert).filter(Alert.alert_type == 'EMERGENCY', Alert.is_active == True).count()
 
+    # Grouped batch queries to avoid department loops
+    bed_counts = dict(db.query(Bed.department_id, func.count(Bed.id)).group_by(Bed.department_id).all())
+    bed_occ_counts = dict(db.query(Bed.department_id, func.count(Bed.id)).filter(Bed.status == BedStatus.OCCUPIED).group_by(Bed.department_id).all())
+    staff_counts = dict(db.query(Staff.department_id, func.count(Staff.id)).group_by(Staff.department_id).all())
+    alert_counts = dict(db.query(Alert.department_id, func.count(Alert.id)).filter(Alert.is_active == True).group_by(Alert.department_id).all())
+
     dept_summaries = []
     for d in db.query(Department).all():
-        d_beds = db.query(Bed).filter(Bed.department_id == d.id).count()
-        d_occ = db.query(Bed).filter(Bed.department_id == d.id, Bed.status == BedStatus.OCCUPIED).count()
-        d_staff = db.query(Staff).filter(Staff.department_id == d.id).count()
-        d_alerts = db.query(Alert).filter(Alert.department_id == d.id, Alert.is_active == True).count()
+        d_beds = bed_counts.get(d.id, 0)
+        d_occ = bed_occ_counts.get(d.id, 0)
+        d_staff = staff_counts.get(d.id, 0)
+        d_alerts = alert_counts.get(d.id, 0)
         dept_summaries.append({
             "id": d.id,
             "name": d.name,

@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { getBeds, getPatients, assignMockPatientBed, scanRfidBed } from '@/lib/api';
+import { useState, useEffect, useRef } from 'react';
+import { getBeds, getPatients, assignMockPatientBed, scanRfidBed, getWsUrl } from '@/lib/api';
 import { Bed, Patient } from '@/types';
 import {
   Loader2,
@@ -49,32 +49,105 @@ export default function BedsPage() {
   const [deptFilter, setDeptFilter] = useState('ALL');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [typeFilter, setTypeFilter] = useState('ALL');
+  const [wsConnected, setWsConnected] = useState(false);
 
-  const fetchData = async (silent = false) => {
+  const isFetchingRef = useRef(false);
+
+  const fetchBeds = async (silent = false) => {
+    if (isFetchingRef.current) return;
+    isFetchingRef.current = true;
     try {
       if (!silent) setLoading(true);
-      const [bedsData, patientsData] = await Promise.all([
-        getBeds(),
-        getPatients().catch(() => [] as Patient[]),
-      ]);
+      const bedsData = await getBeds();
       setBeds(bedsData);
-      setPatients(patientsData);
       setError(null);
     } catch (err: any) {
-      console.warn('[FlowOS Beds] Poll error:', err.message || err);
+      console.warn('[FlowOS Beds] Fetch error:', err.message || err);
       if (!silent) setError(err.message || 'Failed to fetch bed data');
     } finally {
+      isFetchingRef.current = false;
       if (!silent) setLoading(false);
     }
   };
 
+  const loadPatientsOnce = async () => {
+    try {
+      const patientsData = await getPatients();
+      setPatients(patientsData);
+    } catch (err) {
+      console.warn('[FlowOS Beds] Failed to prefetch patients:', err);
+    }
+  };
+
   useEffect(() => {
-    fetchData();
-    // Live polling: updates automatically every 1.5 seconds when RFID reader triggers
-    const interval = setInterval(() => {
-      fetchData(true);
-    }, 1500);
-    return () => clearInterval(interval);
+    fetchBeds();
+    loadPatientsOnce();
+
+    let ws: WebSocket | null = null;
+    let reconnectTimer: any = null;
+    let heartbeatInterval: any = null;
+    let isUnmounted = false;
+
+    const connectWebSocket = () => {
+      if (isUnmounted) return;
+      try {
+        const wsUrl = getWsUrl();
+        ws = new WebSocket(wsUrl);
+
+        ws.onopen = () => {
+          if (isUnmounted) return;
+          setWsConnected(true);
+          heartbeatInterval = setInterval(() => {
+            if (ws?.readyState === WebSocket.OPEN) {
+              ws.send('ping');
+            }
+          }, 25000);
+        };
+
+        ws.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            if (data.type === 'BEDS_UPDATED') {
+              fetchBeds(true);
+            }
+          } catch {
+            // Heartbeat pong or plain text
+          }
+        };
+
+        ws.onclose = () => {
+          if (isUnmounted) return;
+          setWsConnected(false);
+          clearInterval(heartbeatInterval);
+          reconnectTimer = setTimeout(connectWebSocket, 4000);
+        };
+
+        ws.onerror = () => {
+          ws?.close();
+        };
+      } catch (e) {
+        console.warn('[FlowOS Beds] WebSocket connection error:', e);
+        reconnectTimer = setTimeout(connectWebSocket, 5000);
+      }
+    };
+
+    connectWebSocket();
+
+    // Gentle fallback safety poll (every 15s instead of rapid 1.5s fire)
+    const pollInterval = setInterval(() => {
+      fetchBeds(true);
+    }, 15000);
+
+    return () => {
+      isUnmounted = true;
+      clearInterval(pollInterval);
+      clearInterval(heartbeatInterval);
+      clearTimeout(reconnectTimer);
+      if (ws) {
+        ws.onclose = null;
+        ws.close();
+      }
+    };
   }, []);
 
   const handleSyncMockPatient = async () => {
@@ -83,7 +156,7 @@ export default function BedsPage() {
       setSyncSuccessMsg(null);
       await assignMockPatientBed();
       setSyncSuccessMsg('AkshayaSri successfully linked to Bed 304B (Room 304B)!');
-      await fetchData(true);
+      await fetchBeds(true);
       setTimeout(() => setSyncSuccessMsg(null), 4000);
     } catch (err: any) {
       setError(err.response?.data?.detail || err.message || 'Failed to sync mock patient bed');
@@ -107,7 +180,7 @@ export default function BedsPage() {
         reader_id: 'RFID-READER-DESK-01',
       });
       setRfidFeedback(res.message || `Bed ${res.bed?.bed_number} updated to ${res.bed?.status}!`);
-      await fetchData(true);
+      await fetchBeds(true);
     } catch (err: any) {
       setRfidFeedback(err.response?.data?.detail || err.message || 'RFID scan failed');
     } finally {
@@ -157,7 +230,7 @@ export default function BedsPage() {
         <AlertCircle className="h-12 w-12 text-rose-500" />
         <h2 className="text-xl font-bold">Error Loading Beds</h2>
         <p className="text-slate-500">{error}</p>
-        <Button onClick={() => fetchData()} variant="outline" className="border-slate-300 hover:bg-slate-100">
+        <Button onClick={() => fetchBeds()} variant="outline" className="border-slate-300 hover:bg-slate-100">
           Retry Connection
         </Button>
       </div>
@@ -181,13 +254,21 @@ export default function BedsPage() {
         </div>
 
         <div className="flex items-center gap-2.5">
-          {/* Live RFID Sync Pill */}
-          <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200/80 px-3 py-1.5 rounded-full text-xs font-semibold text-emerald-800 shadow-2xs">
+          {/* Live Stream Pill */}
+          <div className={`flex items-center gap-2 border px-3 py-1.5 rounded-full text-xs font-semibold shadow-2xs ${
+            wsConnected
+              ? 'bg-emerald-50 border-emerald-200/80 text-emerald-800'
+              : 'bg-teal-50 border-teal-200/80 text-teal-800'
+          }`}>
             <span className="relative flex h-2.5 w-2.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-600"></span>
+              <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
+                wsConnected ? 'bg-emerald-400' : 'bg-teal-400'
+              }`}></span>
+              <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${
+                wsConnected ? 'bg-emerald-600' : 'bg-teal-600'
+              }`}></span>
             </span>
-            <span className="hidden sm:inline">Live RFID Stream:</span> Active
+            <span className="hidden sm:inline">Live Stream:</span> {wsConnected ? 'Real-Time WebSocket' : 'Polling Sync'}
           </div>
 
           {/* Simulate RFID Scan Button */}
@@ -207,7 +288,7 @@ export default function BedsPage() {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => fetchData()}
+            onClick={() => fetchBeds()}
             disabled={loading}
             className="border-slate-200 text-slate-700 hover:bg-slate-100 font-semibold shadow-2xs"
           >
@@ -355,7 +436,7 @@ export default function BedsPage() {
           setIsModalOpen(false);
           setSelectedBed(null);
         }}
-        onSuccess={() => fetchData(true)}
+        onSuccess={() => fetchBeds(true)}
         availableBeds={beds}
         patients={patients}
       />

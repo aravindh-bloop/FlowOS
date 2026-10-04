@@ -4,7 +4,20 @@ from app.config import get_settings
 
 settings = get_settings()
 
-engine = create_engine(settings.DATABASE_URL)
+connect_args = {}
+if "sqlite" in settings.DATABASE_URL:
+    connect_args["check_same_thread"] = False
+    engine = create_engine(settings.DATABASE_URL, connect_args=connect_args)
+else:
+    engine = create_engine(
+        settings.DATABASE_URL,
+        pool_size=30,
+        max_overflow=50,
+        pool_timeout=15,
+        pool_recycle=600,
+        pool_pre_ping=True,
+    )
+
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 class Base(DeclarativeBase):

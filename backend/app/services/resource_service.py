@@ -1,12 +1,22 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from datetime import datetime, timezone
 from fastapi import HTTPException
 from typing import Optional, Any, Dict
+import time
 
 from app.models.resource import Equipment, OperatingTheatre
 from app.models.hospital import Bed, BedStatus
 from app.models.patient import Patient, Admission, PatientTransfer, TransferStatus
 from app.models.event import HospitalEvent, EventType
+from app.websocket_manager import broadcast_sync
+
+_beds_cache: Dict[str, Any] = {"data": None, "timestamp": 0.0}
+BEDS_CACHE_TTL_SECONDS = 3.0
+
+def invalidate_beds_cache():
+    global _beds_cache
+    _beds_cache["data"] = None
+    _beds_cache["timestamp"] = 0.0
 
 def _enrich_bed(db: Session, b: Bed) -> Bed:
     if b.department:
@@ -31,10 +41,52 @@ def _enrich_bed(db: Session, b: Bed) -> Bed:
 def get_equipment(db: Session):
     return db.query(Equipment).all()
 
-def get_beds(db: Session):
-    beds = db.query(Bed).order_by(Bed.department_id, Bed.id).all()
+def get_beds(db: Session, force_refresh: bool = False):
+    global _beds_cache
+    now = time.time()
+    if not force_refresh and _beds_cache["data"] is not None and (now - _beds_cache["timestamp"]) < BEDS_CACHE_TTL_SECONDS:
+        return _beds_cache["data"]
+
+    # Eagerly load department and room with single JOIN query (avoids N+1 lazy queries)
+    beds = (
+        db.query(Bed)
+        .options(joinedload(Bed.department), joinedload(Bed.room))
+        .order_by(Bed.department_id, Bed.id)
+        .all()
+    )
+
+    # Batch load all patients and active admissions for occupied beds in 2 fast queries
+    patient_ids = list({b.patient_id for b in beds if b.patient_id})
+    patients_map = {}
+    admissions_map = {}
+    if patient_ids:
+        pts = db.query(Patient).filter(Patient.id.in_(patient_ids)).all()
+        patients_map = {p.id: p for p in pts}
+        adms = (
+            db.query(Admission)
+            .filter(Admission.patient_id.in_(patient_ids))
+            .order_by(Admission.admission_date.asc())
+            .all()
+        )
+        for adm in adms:
+            admissions_map[adm.patient_id] = adm.id
+
     for b in beds:
-        _enrich_bed(db, b)
+        if b.department:
+            setattr(b, "department_name", b.department.name)
+        if b.room:
+            setattr(b, "room_number", b.room.room_number)
+        if b.patient_id:
+            pt = patients_map.get(b.patient_id)
+            if pt:
+                setattr(b, "patient_name", f"{pt.first_name} {pt.last_name}".strip())
+                setattr(b, "patient_mrn", pt.mrn)
+            adm_id = admissions_map.get(b.patient_id)
+            if adm_id:
+                setattr(b, "admission_id", adm_id)
+
+    _beds_cache["data"] = beds
+    _beds_cache["timestamp"] = now
     return beds
 
 def get_bed_summary_by_department(db: Session, department_id: int):
@@ -111,6 +163,8 @@ def assign_bed(
     db.add(event)
     db.commit()
     db.refresh(bed)
+    invalidate_beds_cache()
+    broadcast_sync({"type": "BEDS_UPDATED", "action": "ASSIGN", "bed_id": bed_id})
     return _enrich_bed(db, bed)
 
 def release_bed(db: Session, bed_id: int, user_name: Optional[str] = None) -> Bed:
@@ -157,6 +211,8 @@ def release_bed(db: Session, bed_id: int, user_name: Optional[str] = None) -> Be
 
     db.commit()
     db.refresh(bed)
+    invalidate_beds_cache()
+    broadcast_sync({"type": "BEDS_UPDATED", "action": "RELEASE", "bed_id": bed_id})
     return _enrich_bed(db, bed)
 
 def transfer_bed(
@@ -230,6 +286,8 @@ def transfer_bed(
 
     db.commit()
     db.refresh(to_bed)
+    invalidate_beds_cache()
+    broadcast_sync({"type": "BEDS_UPDATED", "action": "TRANSFER", "from_bed_id": from_bed_id, "to_bed_id": to_bed_id})
     return _enrich_bed(db, to_bed)
 
 def ensure_mock_patient_bed_assigned(db: Session) -> Optional[Bed]:
@@ -248,6 +306,8 @@ def ensure_mock_patient_bed_assigned(db: Session) -> Optional[Bed]:
             adm.bed_id = bed_304b.id
         db.commit()
         db.refresh(bed_304b)
+        invalidate_beds_cache()
+        broadcast_sync({"type": "BEDS_UPDATED", "action": "MOCK_SYNC"})
         return _enrich_bed(db, bed_304b)
     return None
 
@@ -367,6 +427,8 @@ def process_rfid_bed_scan(
         db.add(ev)
         db.commit()
         db.refresh(bed)
+        invalidate_beds_cache()
+        broadcast_sync({"type": "BEDS_UPDATED", "action": "RFID_TAP_OUT", "bed_number": bed.bed_number})
 
         return {
             "success": True,
@@ -426,6 +488,8 @@ def process_rfid_bed_scan(
     db.add(ev)
     db.commit()
     db.refresh(bed)
+    invalidate_beds_cache()
+    broadcast_sync({"type": "BEDS_UPDATED", "action": "RFID_CHECK_IN", "bed_number": bed.bed_number})
 
     return {
         "success": True,

@@ -38,6 +38,14 @@ export function getBaseApiUrl(): string {
   return raw.endsWith('/api') ? raw : `${raw}/api`;
 }
 
+export function getWsUrl(): string {
+  if (typeof window === 'undefined') return 'ws://localhost:8000/api/ws/updates';
+  const apiUrl = getBaseApiUrl();
+  const wsProtocol = apiUrl.startsWith('https') ? 'wss' : 'ws';
+  const hostPath = apiUrl.replace(/^https?:\/\//, '').replace(/\/+$/, '');
+  return `${wsProtocol}://${hostPath}/ws/updates`;
+}
+
 export const API_URL = getBaseApiUrl();
 
 const api = axios.create({
